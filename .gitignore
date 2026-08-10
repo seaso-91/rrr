@@ -1,3 +1,53 @@
+# RR Specific
+*.exe
+*.csv
+*.out
+bphe.dat
+coil.dat
+coil1.dat
+comair.dat
+comp.dat
+compl.dat
+edcon.dat
+edeva.dat
+packless.dat
+ref.dat
+revalv.dat
+rrmanual.pdf
+turbo.dat
+D1-6438-ZH50KCE.dat
+D1-6440-ZH40KCE.dat
+D1-6441-ZH45KCE.dat
+D1-ACOND.DAT
+D1-ACU.DAT
+D1-AEVAP.DAT
+D1-ASYS.DAT
+D1-AWCSYS.DAT
+D1-AWESYS.DAT
+D1-COMP.DAT
+D1-FAD.DAT
+D1-STA.DAT
+D1-WCL.DAT
+D1-WCSYS.DAT
+D1-WCU.DAT
+D1-WEL.DAT
+D1-WESYS.DAT
+D1-WLHPA.DAT
+D1-WWSYS.DAT
+
+
+
+# RRR Specific
+## Ignore folders folders with numbers as names
+[0-9]*/
+
+
+# Ignore any temp files
+*delete?me*
+*deleteme*
+*test*
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
