@@ -1,6 +1,7 @@
 from RR import Executable
 from pathlib import Path
 
+
 class InputData():
     def __init__(self, parent: Executable):
         self.parent = parent
@@ -19,6 +20,8 @@ class InputData():
         self.start_index = 0
         self.end_index = 0
         self._expected_number_of_results = 0
+        from rr_input_text import InputText
+        self.string_input = InputText(self)
 
     def __str__ (self):
         """
@@ -61,7 +64,7 @@ class InputData():
         """
         ## FIXME this will change the input file, so we need to write just a clear method
         self.__init__(self.parent)
-        
+
     def get_groups(self, sort: bool = True) -> list[str]:
         """
         Returns a list of unique groups in the input data.
@@ -659,7 +662,7 @@ class InputData():
         """
         Returns a Tkinter widget for displaying and editing the input data.
         """
-        from RRXData import Widget
+        from rr_input_text import Widget
         return Widget(self, *args, **kwargs)
 
     def set_data(self, data: str|Path, force: bool = False):
@@ -706,6 +709,7 @@ class InputData():
                 if self.validate_value(code, value) is False:
                     raise ValueError(f"Invalid value '{value}' for input '{code}'")
         
+
 
 class OutputData():
     def __init__(self, parent: Executable):
@@ -899,5 +903,6 @@ if __name__ == "__main__":
     root.title("Input Data Widget")
     widget = data.input.get_widget()
     widget.pack(fill="both", expand=True)
+    widget.text
     root.mainloop()
     
