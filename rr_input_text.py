@@ -31,7 +31,7 @@ class InputText():
         self._initialize()
         self._create_input_list()
         self.input = _Input(self)
-        self.cursor_position = 0
+        self.cursor_position = 1
 
     from RR import Input
 
@@ -45,13 +45,11 @@ class InputText():
         Raises:
             ValueError: If the cursor position is out of bounds.
         """
-        if cursor_position is None:
+        if cursor_position is None or cursor_position < 1 or cursor_position > len(self._text):
             cursor_position = self.cursor_position
-        if cursor_position < 0 or cursor_position >= len(self._text):
-            raise ValueError("Cursor position must be within the bounds of the text.")
         
         self._enter_state(State.INITIALIZING)
-        while self._iter_position < cursor_position - 1:
+        while self._iter_position < cursor_position:
             self._state.enter()
             self._state.validate()
             self._state.exit()
@@ -64,7 +62,7 @@ class InputText():
         Raises a ParseError if any validation fails.
         """
         self._enter_state(State.INITIALIZING)
-        while self._iter_position < len(self._text) -1:
+        while self._iter_position < len(self._text):
             self._state.enter()
             self._state.validate()
             self._state.exit()
@@ -81,7 +79,7 @@ class InputText():
             raise ParseError(self.iter_position, "Input text has not been validated yet.")
         
         self._enter_state(State.INITIALIZING)
-        while self._iter_position < len(self._text) -1:
+        while self._iter_position < len(self._text):
             self._state.enter()
             self._state.set_values()
             self._state.exit()
@@ -92,8 +90,6 @@ class InputText():
 
     @property
     def _input(self):
-        # if self._input_list[self._input_index][0] is None:
-        #     return None
         return self._input_list[self._input_index][0]
 
     @property
@@ -111,8 +107,8 @@ class InputText():
 
     @iter_position.setter
     def iter_position(self, value: int):
-        if value < 0 or value > len(self._text):
-            raise ValueError("Cursor position must be within the bounds of the text.")
+        if value < 1 or value > len(self._text) + 1:
+            return
         self._iter_position = value
 
     def _initialize(self):
@@ -218,6 +214,8 @@ class InputText():
         """
         Validates the current group in the stack.
         """
+
+        print(f"{self._stack=}", f"{self._iter_position=}")
         if self._stack.isdigit():
             if int(self._stack) < 0:
                 raise ParseError(self.iter_position, f"Invalid group '{self._stack}'")
@@ -374,11 +372,11 @@ class _Input():
         if index <= 0:
             return 0
         index -=1
-        for start, char in enumerate(self.parent._text):
+        for start, char in enumerate(self.parent._text, start=1):
             if char in [",", "\n", "[", "(", "{", "]", ")", "}"]:
                 index -= 1
             if index < 0:
-                return start + 1
+                return start
         raise ValueError("Index out of bounds.")
 
     def _get_end_of_value(self, index: int) -> int:
@@ -387,7 +385,7 @@ class _Input():
         If the index is out of bounds, raises a ValueError.
         """
         # index += 1
-        for end, char in enumerate(self.parent._text):
+        for end, char in enumerate(self.parent._text, start=0):
             if char in [",", "\n", "[", "(", "{", "]", ")", "}"]:
                 index -= 1
             if index < 0:
@@ -614,7 +612,7 @@ class _Ending(_State):
     
     def enter(self):
         super().enter()
-        if self.parent._input is not None:
+        if self.parent._input_index != 0:
             raise ParseError(self.parent.iter_position, f"Unexpected input '{self.parent._input.code}' after end of input text.")
 
     def exit(self):
@@ -623,7 +621,7 @@ class _Ending(_State):
             case "":
                 return
             case _:
-                raise ValueError(f"Multi input text is not implemented yet. Unexpected character '{self.parent._char}' after end of input text.")
+                raise ParseError(self.parent.iter_position, f"Multi input text is not implemented yet. Unexpected character '{self.parent._char}' after end of input text.")
 
 import tkinter as tk
 from tkinter import ttk
@@ -697,7 +695,7 @@ class StringInput(ttk.Frame):
     def on_click(self, event=None):
         self.start_update(event)
         self.text_widget.focus_set()
-        self.string_input.cursor_position = self.cursor_position
+        self.set_cursor_position()
         print(f"{self.cursor_position=}, {self.string_input.cursor_position=}, {self.string_input.input.index=}")
         self.update_input_label()
         if self._inserting:
@@ -818,7 +816,10 @@ class StringInput(ttk.Frame):
 
     @property
     def cursor_position(self) -> int:
-        return int(self.text_widget.count("1.0", "insert", "chars")[0])
+        try:
+            return int(self.text_widget.count("1.0", "insert", "chars")[0])
+        except Exception:
+            return 0
 
     def select(self, start: int, end: int):
         start_idx = f"1.0 + {start} chars"
@@ -832,15 +833,25 @@ class StringInput(ttk.Frame):
 
 
     def _flush(self):
+        self.text_widget.tag_remove("red", "1.0", tk.END)
+        self.text_widget.tag_remove("black", "1.0", tk.END)
         self.string_input.text = self.text_widget.get("1.0", tk.END)
         try:
             self.string_input.validate()
             self.string_input.set_values()
+            self.master.error_label.clear_error()
         except Exception as e:
             message = e.__str__()
             position = e.position
-            messagebox.showerror("Error parsing input", message)
-            self.text_widget.mark_set("insert", f"{position + 1}.0")
+            self.show_error(message, position)
+
+    def show_error(self, message: str, position: int):
+        self.master.error_label.set_error(message)
+        self.text_widget.tag_add("black", "1.0", f"1.0 + {position-1} chars")
+        self.text_widget.tag_add("red", f"1.0 + {position-1} chars", tk.END)
+        self.text_widget.tag_configure("red", foreground="red")
+        self.text_widget.tag_configure("black", foreground="black")
+        self.text_widget.mark_set("insert", f"1.0 + {position} chars")
 
     def handle_drop(self, event):
         file_path = event.data
@@ -902,6 +913,17 @@ class Commands(ttk.Frame):
             self.toggle_button.config(text="Inserting Mode: OFF")
             self.text_frame.text_widget.tag_remove("sel", "1.0", tk.END)
 
+class ErrorLabel(ttk.Label):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.config(text="", foreground="red")
+
+    def set_error(self, message: str):
+        self.config(text=message)
+
+    def clear_error(self):
+        self.config(text="")
+
 class Widget(ttk.Frame):
     def __init__(self, input_data: InputData, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -910,9 +932,11 @@ class Widget(ttk.Frame):
         self.information = Information(master=self)
         self.text = StringInput(master=self, string_input=self.string_input)
         self.commands = Commands(master=self, text_frame=self.text, input_data=self.input_data, string_input=self.string_input)
+        self.error_label = ErrorLabel(master=self)
 
         self.information.pack(side="top", fill="x")
         self.text.pack(side="top", fill="both", expand=True)
+        self.error_label.pack(side="bottom", fill="x")
         self.commands.pack(side="bottom", fill="x")
 
         # add a margin to the frame
