@@ -861,8 +861,9 @@ class StringInput(ttk.Frame):
         if file.is_file():
             try:
                 self.end_update()
-                self.input_data.set_data(data = file)
-                self.master.refresh()
+                self.text_widget.delete("1.0", tk.END)
+                self.text_widget.insert("1.0", file.read_text())
+                #self.master.refresh()
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to load data from {file_path}: {e}")
 
