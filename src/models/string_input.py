@@ -1,4 +1,6 @@
 from enum import Enum, auto
+
+
 class State(Enum):
     INITIALIZING = auto()
     APPENDING_VALUE = auto()
@@ -15,15 +17,20 @@ class State(Enum):
 
 class ParseError(Exception):
     def __init__(self, position: int, message: str):
+        super().__init__()
         self._position = position
-        super().__init__(message)
+        self._message = message
 
     @property
     def position(self):
         return self._position
 
+    @property
+    def message(self):
+        return self._message
+
 from src.models.rr_data import InputData
-class InputText():
+class StringInput():
     def __init__(self, data: InputData):
         self._data = data
         self._executable = data.parent
@@ -305,7 +312,7 @@ class InputText():
         return self._values.pop()
 
 class _Input():
-    def __init__(self, parent: InputText):
+    def __init__(self, parent: StringInput):
         self.parent = parent
 
     @property
@@ -393,7 +400,7 @@ class _Input():
         raise ValueError("Index out of bounds.")
             
 class _State():
-    def __init__(self, parent: InputText):
+    def __init__(self, parent: StringInput):
         self.parent = parent
         
     def enter(self):
@@ -622,378 +629,3 @@ class _Ending(_State):
                 return
             case _:
                 raise ParseError(self.parent.iter_position, f"Multi input text is not implemented yet. Unexpected character '{self.parent._char}' after end of input text.")
-
-import tkinter as tk
-from tkinter import ttk
-from tkinter import filedialog, messagebox
-from pathlib import Path
-from src.models.rr_data import InputData
-from tkinterdnd2 import DND_FILES, TkinterDnD
-
-# from rr_input_text import InputText
-
-class Information(ttk.Frame):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.label = tk.Label(self, text="Current Code: None")
-        self.label.pack(side="top", fill="x")
-
-        self.description_label = tk.Label(self, text="Description: None")
-        self.description_label.pack(side="top", fill="x")
-
-        self._input = None
-
-    @property
-    def input(self):
-        return self._input
-
-    @input.setter
-    def input(self, value):
-        self._input = value
-        if value is not None:
-            self.label.config(text=f"Current Code: {value.code}")
-            self.description_label.config(text=f"Description: {value.description}")
-        else:
-            self.label.config(text="Current Code: None")
-            self.description_label.config(text="Description: None")
-        
-class StringInput(ttk.Frame):
-    def __init__(self, string_input: InputText, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.string_input = string_input
-        self._inserting = False
-        self._updating = False
-
-        # Create the scrollbar
-        scrollbar = tk.Scrollbar(self)
-        scrollbar.pack(side="right", fill="y")
-
-        self.text_widget = tk.Text(
-            self,
-            wrap="none",
-            yscrollcommand=scrollbar.set,
-            font=("Arial", 10),
-            padx=10,
-            pady=10,
-        )
-        self.text_widget.pack(side="bottom", fill="both", expand=True)
-
-        scrollbar.config(command=self.text_widget.yview)
-        
-        self.text_widget.bind("<<Modified>>", self.on_text_change)
-        self.text_widget.bind("<FocusIn>", self.start_update)
-        self.text_widget.bind("<FocusOut>", self.end_update)
-        self.text_widget.bind("<ButtonRelease-1>", self.on_click)
-
-        self.text_widget.drop_target_register(DND_FILES)
-        self.text_widget.dnd_bind("<<Drop>>", self.handle_drop)
-
-        self.suppress_modified = False
-
-    def on_click(self, event=None):
-        self.start_update(event)
-        self.text_widget.focus_set()
-        self.set_cursor_position()
-        print(f"{self.cursor_position=}, {self.string_input.cursor_position=}, {self.string_input.input.index=}")
-        self.update_input_label()
-        if self._inserting:
-            start, end = self.string_input.input.current()
-            self.select(start, end)
-
-    def start_update(self, event=None):
-        if self._updating:
-            return
-
-        self._updating = True
-        #self.text_widget.bind("<KeyPress-Up>", self.do_nothing)
-        self.text_widget.bind("<KeyRelease-Up>", self.move_cursor)
-
-        #self.text_widget.bind("<KeyPress-Down>", self.do_nothing)
-        self.text_widget.bind("<KeyRelease-Down>", self.move_cursor)
-
-        self.text_widget.bind("<KeyPress-Left>", self.start_move_cursor)
-        self.text_widget.bind("<KeyRelease-Left>", self.end_move_cursor_left)
-
-        self.text_widget.bind("<KeyPress-Right>", self.start_move_cursor)
-        self.text_widget.bind("<KeyRelease-Right>", self.end_move_cursor_right)
-
-        self.text_widget.bind("<KeyPress-Tab>", self.do_nothing)
-        self.text_widget.bind("<KeyRelease-Tab>", self.tab_cursor_right)
-
-        self.text_widget.bind("<<Paste>>", self.on_paste)
-
-    def do_nothing(self, event=None):
-        if self._inserting:
-            return "break"
-
-        if self._updating:
-            #remove focus from the text_widget to trigger the end_update method
-            self.text_widget.focus_set()        
-
-    def on_paste(self, event=None):
-        self.start_update(event)
-        self.text_widget.after(1, self.end_update)
-    
-    def end_update(self, event=None):
-        if not self._updating:
-            return
-
-        self.text_widget.unbind("<KeyPress-Up>")
-        self.text_widget.unbind("<KeyRelease-Up>")
-        self.text_widget.unbind("<KeyPress-Down>")
-        self.text_widget.unbind("<KeyRelease-Down>")
-        self.text_widget.unbind("<KeyPress-Left>")
-        self.text_widget.unbind("<KeyRelease-Left>")
-        self.text_widget.unbind("<KeyPress-Right>")
-        self.text_widget.unbind("<KeyRelease-Right>")
-        self.text_widget.unbind("<KeyPress-Tab>")
-        self.text_widget.unbind("<KeyRelease-Tab>")
-        self.text_widget.unbind("<<Paste>>")
-
-        self.on_text_change(force=True)
-        self._updating = False
-
-    def on_text_change(self, event=None, force=False):
-        if self.suppress_modified:
-            self.text_widget.edit_modified(False)
-            return
-        
-        if not force and not self.text_widget.edit_modified():
-            return
-        
-        self.text_widget.edit_modified(False)
-        self._flush()
-
-    def set_cursor_position(self):
-        self.string_input.cursor_position = self.cursor_position
-
-    def start_move_cursor(self, event):
-        self.set_cursor_position()
-        self._current_input_index = self.string_input.input.index
-
-    def move_cursor(self, event):
-        self.set_cursor_position()
-        self.update_input_label()
-        if self._inserting:
-            start, end = self.string_input.input.current()
-            self.select(start, end)
-
-    def end_move_cursor_left(self, event):
-        self.set_cursor_position()
-        if self._inserting:
-            if self._current_input_index == self.string_input.input.index:
-                start, end = self.string_input.input.prev()
-            else:
-                start, end = self.string_input.input.current()
-            self.select(start, end)
-        self.update_input_label()
-
-    def end_move_cursor_right(self, event):
-        self.set_cursor_position()
-        if self._inserting:
-            if self._current_input_index == self.string_input.input.index:
-                start, end = self.string_input.input.next()
-            else:
-                start, end = self.string_input.input.current()
-            self.select(start, end)
-        self.update_input_label()
-
-    def tab_cursor_right(self, event):
-        self.set_cursor_position()
-        start, end = self.string_input.input.next()
-        if self._inserting:
-            self.select(start, end)
-        else:
-            self.text_widget.mark_set("insert", f"1.0 + {start} chars")
-        self.update_input_label()
-        return "break"
-
-    def update_input_label(self):
-        input = self.string_input.get_input()
-        self.master.information.input = input
-
-    @property
-    def cursor_position(self) -> int:
-        try:
-            return int(self.text_widget.count("1.0", "insert", "chars")[0])
-        except Exception:
-            return 0
-
-    def select(self, start: int, end: int):
-        start_idx = f"1.0 + {start} chars"
-        end_idx = f"1.0 + {end} chars"
-
-        self.text_widget.tag_remove("sel", "1.0", tk.END)
-        self.text_widget.tag_add("sel", start_idx, end_idx)
-
-        self.text_widget.mark_set("insert", start_idx)
-        self.text_widget.see(start_idx)
-
-
-    def _flush(self):
-        self.text_widget.tag_remove("red", "1.0", tk.END)
-        self.text_widget.tag_remove("black", "1.0", tk.END)
-        self.string_input.text = self.text_widget.get("1.0", tk.END)
-        try:
-            self.string_input.validate()
-            self.string_input.set_values()
-            self.master.error_label.clear_error()
-        except Exception as e:
-            message = e.__str__()
-            position = e.position
-            self.show_error(message, position)
-
-    def show_error(self, message: str, position: int):
-        self.master.error_label.set_error(message)
-        self.text_widget.tag_add("black", "1.0", f"1.0 + {position-1} chars")
-        self.text_widget.tag_add("red", f"1.0 + {position-1} chars", tk.END)
-        self.text_widget.tag_configure("red", foreground="red")
-        self.text_widget.tag_configure("black", foreground="black")
-        self.text_widget.mark_set("insert", f"1.0 + {position} chars")
-
-    def handle_drop(self, event):
-        file_path = event.data
-        if file_path.startswith("{") and file_path.endswith("}"):
-            file_path = file_path[1:-1]
-        file=Path(file_path)
-        if file.is_file():
-            try:
-                self.end_update()
-                self.text_widget.delete("1.0", tk.END)
-                self.text_widget.insert("1.0", file.read_text())
-                #self.master.refresh()
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to load data from {file_path}: {e}")
-
-
-class Commands(ttk.Frame):
-    def __init__(self, text_frame: StringInput, input_data: InputData, string_input, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.text_frame = text_frame
-        self.input_data = input_data
-        self.string_input = string_input
-
-        self.toggle_button = tk.Button(self, text="Toggle Inserting Mode", command=self.toggle_inserting_mode)
-        self.toggle_button.pack(side="left", fill="x", expand=True)
-
-        self.write_button = tk.Button(self, text="Write Input File", command=self.input_data.write_input_file)
-        self.write_button.pack(side="left", fill="x", expand=True)
-
-        self.set_file_button = tk.Button(self, text="Set Input File Name", command=self.set_input_file_name)
-        self.set_file_button.pack(side="left", fill="x", expand=True)
-
-        self.export_button = tk.Button(self, text="Export Input File")
-        self.export_button.pack(side="left", fill="x", expand=True)
-
-    def set_input_file_name(self):
-        current_name = self.input_data.input_file
-
-        new_name = tk.filedialog.asksaveasfilename(
-            initialfile=Path(current_name).name if current_name else "",
-            defaultextension=".dat",
-            filetypes=[
-                ("DAT files", "*.dat"),
-                ("All files", "*.*")    
-            ]
-        )
-        try:
-            if new_name:
-                self.input_data.set_input_file_name(Path(new_name).name)
-        except ValueError as e:
-            tk.messagebox.showerror("Invalid Input File Name", str(e))
-
-    def toggle_inserting_mode(self):
-        self.text_frame._inserting = not self.text_frame._inserting
-        if self.text_frame._inserting:
-            self.toggle_button.config(text="Inserting Mode: ON")
-            start, end = self.string_input.input.current()
-            self.text_frame.select(start, end)
-        else:
-            self.toggle_button.config(text="Inserting Mode: OFF")
-            self.text_frame.text_widget.tag_remove("sel", "1.0", tk.END)
-
-class ErrorLabel(ttk.Label):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.config(text="", foreground="red")
-
-    def set_error(self, message: str):
-        self.config(text=message)
-
-    def clear_error(self):
-        self.config(text="")
-
-class Widget(ttk.Frame):
-    def __init__(self, input_data: InputData, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.input_data = input_data
-        self.string_input = self.input_data.string_input
-        self.information = Information(master=self)
-        self.text = StringInput(master=self, string_input=self.string_input)
-        self.commands = Commands(master=self, text_frame=self.text, input_data=self.input_data, string_input=self.string_input)
-        self.error_label = ErrorLabel(master=self)
-
-        self.information.pack(side="top", fill="x")
-        self.text.pack(side="top", fill="both", expand=True)
-        self.error_label.pack(side="bottom", fill="x")
-        self.commands.pack(side="bottom", fill="x")
-
-        # add a margin to the frame
-        self.pack(padx=10, pady=10)
-
-        # self.text._set_text_without_trigger(str(self.input_data))
-
-    # def set(self, text: str):
-    #     self.text._set_text_without_trigger(text)
-
-    # def get(self) -> str:
-    #     return self.text.text_widget.get("1.0", tk.END)
-
-    # def refresh(self):
-    #     self.text._set_text_without_trigger(str(self.input_data))
-
-if __name__ == "__main__":
-    from models.aevap import AEVAP
-    from models.rr_data import InputData
-    aevap = AEVAP()
-    input_data = aevap.data.input
-
-    state_machine = InputText(input_data)
-
-    text = "2[80,70,68,60,59],3[70,60,50,59,58],5[105,106,107,108,109],40,50,5,53,,,,\n"
-    text +=  "1[417,135,100,200,300],1,12,6,30,46,4[4000,4100,4200,4300,4400,4500],S,24,0,0,0,10,-1,75,0,Z16,0,0,0,0,11S,11,,,\n0\n"
-
-    state_machine.text = text
-
-    try:
-        state_machine.validate()
-        print("Input text is valid.")
-        state_machine.set_values()
-        print("Values set in the data object.")
-    except ParseError as e:
-        print(f"Parse error at position {e.position}: {e}")
-        print(f"{state_machine.text[:e.position]}")
-
-    print(f"Total number of runs: {aevap.data.input.number_of_runs()}")
-    # state_machine.input.next()
-    
-    for cursor_position in range(35,41,1):
-        print(f"Cursor position: {cursor_position} -> {state_machine.get_input(cursor_position).code}")
-
-    for cursor_position in range(0, 40, 1):
-        state_machine.cursor_position = cursor_position
-        print(f"Cursor position: {cursor_position} -> {state_machine.input.index}")
-
-
-    state_machine.cursor_position = 27
-    print(f"Setting cursor position to {state_machine.cursor_position}")
-    print(f"Cursor position: {state_machine.cursor_position} -> {state_machine.get_input().code}")
-    print(f"Next cursor position: {state_machine.input.next()}")
-    print(f"Previous cursor position: {state_machine.input.prev()}")
-
-    assert state_machine.input.next() == (29, 31), "Next input position is incorrect."
-    assert state_machine.input.prev() == (23, 25), "Previous input position is incorrect."
-    assert state_machine.get_input().code == "TWB", "Current input code is incorrect."
-    assert input_data.number_of_runs() == 3750, "Number of runs is incorrect."

@@ -20,8 +20,8 @@ class InputData():
         self.start_index = 0
         self.end_index = 0
         self._expected_number_of_results = 0
-        from src.controllers.rr_input_text import InputText
-        self.string_input = InputText(self)
+        from src.models.string_input import StringInput
+        self.string_input = StringInput(self)
 
     def __str__ (self):
         """
@@ -662,7 +662,7 @@ class InputData():
         """
         Returns a Tkinter widget for displaying and editing the input data.
         """
-        from src.controllers.rr_input_text import Widget
+        from src.controllers.string_inputs_controller import Widget
         return Widget(self, *args, **kwargs)
 
     def set_data(self, data: str|Path, force: bool = False):
