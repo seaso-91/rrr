@@ -2,18 +2,18 @@ from enum import Enum, auto
 
 
 class State(Enum):
-    INITIALIZING = auto()
-    APPENDING_VALUE = auto()
-    SETTING_VALUE = auto()
-    CREATING_LIST = auto()
-    CREATING_RANGE = auto()
-    CREATING_SET = auto()
-    APPENDING_LIST_VALUE = auto()
-    APPENDING_LIST = auto()
-    CLOSING_LIST = auto()
-    SETTING_VALUE_AFTER_NEW_LINE = auto()
-    APPENDING_VALUE_AFTER_NEW_LINE = auto()
-    ENDING = auto()
+    INITIALIZING = "_Initializing"
+    APPENDING_VALUE = "_AppendingValue"
+    SETTING_VALUE = "_SettingValue"
+    CREATING_LIST = "_CreatingList"
+    CREATING_RANGE = "_CreatingRange"
+    CREATING_SET = "_CreatingSet"
+    APPENDING_LIST_VALUE = "_AppendingListValue"
+    APPENDING_LIST = "_AppendingList"
+    CLOSING_LIST = "_ClosingList"
+    SETTING_VALUE_AFTER_NEW_LINE = "_SettingValueAfterNewLine"
+    APPENDING_VALUE_AFTER_NEW_LINE = "_AppendingValueAfterNewLine"
+    ENDING = "_Ending"
 
 class ParseError(Exception):
     def __init__(self, position: int, message: str):
@@ -40,28 +40,42 @@ class StringInput():
         self.input = _Input(self)
         self.cursor_position = 1
 
-    from src.models.rr import Input
-
-    def get_input(self, cursor_position: int = None) -> Input:
+    def validate_input(self, input, text: str):
         """
-        Returns the input at the given cursor position. \n
-        Args:
-            cursor_position (int): The position of the cursor in the input text. If None, uses the current cursor position.
-        Returns:
-            Input: The input at the given cursor position.
-        Raises:
-            ValueError: If the cursor position is out of bounds.
+        Validates the input text against the expected input sequence for a specific input.
+        Raises a ParseError if any validation fails.
         """
-        if cursor_position is None or cursor_position < 1 or cursor_position > len(self._text):
-            cursor_position = self.cursor_position
-        
+        try:
+            fix = 1/0
+        except Exception as e:
+            print("=================This hasn't been debugged yet.=================")
+            raise e
         self._enter_state(State.INITIALIZING)
-        while self._iter_position < cursor_position:
+
+        while self._iter_position < len(text):
             self._state.enter()
             self._state.validate()
             self._state.exit()
+        if self._state.name != State.SETTING_VALUE.value:
+            raise ParseError(self.iter_position, f"Unexpected end of input for '{self._input.code}'.")
 
-        return self._input
+    def set_values_for_input(self, input, text: str):
+        """
+        Sets the values for the current input in the data object using the provided text.
+        Raises a ParseError if any validation fails.
+        """
+        try:
+            fix = 1/0
+        except Exception as e:
+            print("=================This hasn't been debugged yet.=================")
+            raise e
+        
+        self._enter_state(State.INITIALIZING)
+
+        while self._iter_position < len(text):
+            self._state.enter()
+            self._state.set_values()
+            self._state.exit()
 
     def validate(self):
         """
@@ -402,7 +416,11 @@ class _Input():
 class _State():
     def __init__(self, parent: StringInput):
         self.parent = parent
-        
+
+    @property
+    def name(self):
+        return self.__class__.__name__
+    
     def enter(self):
         # if self.parent._char == "\n":
         #     char = "newline"
