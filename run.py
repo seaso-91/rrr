@@ -1,10 +1,21 @@
+import subprocess
 import runpy
 import sys
+from pathlib import Path
 if __name__ == "__main__":
 
+    # directory = Path("C:\\Users\\jajones\\Desktop\\rrr\\programs\\14007")
+    # exe = directory / "AEVAP.exe"
+
+    # result = subprocess.run(
+    #     [str(exe), "d1.dat"],
+    #     capture_output=True,
+    #     text=True,
+    #     cwd=directory
+    # )
+    # print(result.stdout)
     target_module = "src.controllers.rr_file_manager"
     #target_module = "src.models.rr"
-    target_module = "src.models.rr_enums"
 
     runpy.run_module(target_module, run_name="__main__", alter_sys=True)
 
