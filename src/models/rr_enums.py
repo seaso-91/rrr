@@ -21,7 +21,7 @@ class Program(Enum):
 
 @property
 def loaded_class(self):
-    module = importlib.import_module(self.value.upper())
+    module = importlib.import_module(f"src.models.{self.value.lower()}")
     return getattr(module, self.value.upper())
 
 @property
@@ -56,11 +56,3 @@ def dat(self):
 
 Dat.name = name
 Dat.dat = dat
-
-
-if __name__ == "__main__":
-    new_executable = Program.AEVAP.cls()
-    print(f"The class: {Program.AEVAP.cls}")
-    print(f"The name: {Program.AEVAP.name}")
-    print(f"The executable: {Program.AEVAP.exe}")
-    print(f"The dat file: {Dat.COIL.dat}")

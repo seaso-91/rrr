@@ -3,10 +3,10 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 import shutil
 import random
-import models.rr as rr
-from models.rr_enums import Dat, Program
+import src.models.rr as rr
+from src.models.rr_enums import Dat, Program
 import copy
-from models.aevap import AEVAP
+from src.models.aevap import AEVAP
 ##FIXME move dats to each module
 # PROGRAM_INFO = {
 #     # Program.ACOND: (RR.ACOND(),[Dat.COIL, Dat.COIL1, Dat.REF]),
@@ -68,7 +68,7 @@ from models.aevap import AEVAP
 class Manager():
     def __init__(self, directory: Path = Path.cwd()):
         self.executable_list = ExecutableList()
-        self.directory = directory
+        self.directory = directory / "programs"
         self._findExistingExecutables()
 
     def run(self, executable: rr.Executable, max_workers=None):
@@ -202,7 +202,7 @@ class ExecutableList():
 
 if __name__ == "__main__":
     from time import time
-    from models.aevap import AEVAP
+    from src.models.aevap import AEVAP
     from pathlib import Path
 
     run_information = {

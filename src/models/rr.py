@@ -419,7 +419,7 @@ class Results():
             raise KeyError(f"Result key '{key}' not found.")
 
 if __name__ == "__main__":
-    from models.aevap import AEVAP
+    from src.models.aevap import AEVAP
     from tkinterdnd2 import TkinterDnD
     root = TkinterDnD.Tk()
     aevap = AEVAP()
