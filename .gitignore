@@ -34,7 +34,7 @@ D1-WEL.DAT
 D1-WESYS.DAT
 D1-WLHPA.DAT
 D1-WWSYS.DAT
-
+KCC/
 
 
 # RRR Specific
@@ -45,7 +45,7 @@ D1-WWSYS.DAT
 # Ignore any temp files
 *delete?me*
 *deleteme*
-*test*
+*testing*
 
 
 # Byte-compiled / optimized / DLL files

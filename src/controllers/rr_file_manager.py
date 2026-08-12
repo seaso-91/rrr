@@ -3,10 +3,10 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 import shutil
 import random
-import RR
-from RREnums import Dat, Program
+import src.models.rr as rr
+from src.models.rr_enums import Dat, Program
 import copy
-from AEVAP import AEVAP
+from src.models.aevap import AEVAP
 ##FIXME move dats to each module
 # PROGRAM_INFO = {
 #     # Program.ACOND: (RR.ACOND(),[Dat.COIL, Dat.COIL1, Dat.REF]),
@@ -66,12 +66,14 @@ from AEVAP import AEVAP
 # }
 
 class Manager():
-    def __init__(self, directory: Path = Path.cwd()):
+    def __init__(self):
         self.executable_list = ExecutableList()
-        self.directory = directory
+        self.directory = Path.cwd()
+        self.spooled_programs_path = self.directory / "programs"
+        self.source_programs_path = self.directory / "KCC"
         self._findExistingExecutables()
 
-    def run(self, executable: RR.Executable, max_workers=None):
+    def run(self, executable: rr.Executable, max_workers=None):
         while len(self.executable_list.getExecutables(executable.program)) < max_workers:
             self.spoolUp(executable)
         executables = self.executable_list.getExecutables(executable.program)
@@ -79,24 +81,24 @@ class Manager():
         with ProcessPoolExecutor(max_workers=max_workers) as pool:
             return list(pool.map(self._run_job, self.executable_list.getExecutables(executable.program)))
         
-    def spoolUp(self, executable: RR.Executable) -> RR.Executable:
+    def spoolUp(self, executable: rr.Executable) -> rr.Executable:
         new_id = self._getNewID()
-        new_path = self.directory / str(new_id)
+        new_path = self.spooled_programs_path / str(new_id)
         Path(new_path).mkdir(parents=True, exist_ok=True)
 
         dats_to_copy = executable.required_dats
 
         #copy the executable and the dat files to the specified path
-        shutil.copy(executable.program.exe, new_path)
+        shutil.copy(self.source_programs_path / executable.program.exe, new_path)
         factory = executable.program.cls
         new_executable = factory()
         for file_name in dats_to_copy:
-            shutil.copy(file_name.dat, new_path)
+            shutil.copy(self.source_programs_path / file_name.dat, new_path)
         new_executable.setPath(new_path)
         self.executable_list.addExecutable(new_executable)
         return new_executable
 
-    def _kill(self, executable: RR.Executable) -> bool:
+    def _kill(self, executable: rr.Executable) -> bool:
         #delete the directory and all its contents
         path = executable.path
         if path.exists() and path.is_dir():
@@ -107,7 +109,7 @@ class Manager():
 
 
     @staticmethod
-    def _run_job(executable: RR.Executable) -> RR.Executable:
+    def _run_job(executable: rr.Executable) -> rr.Executable:
         executable.run()
         return executable
 
@@ -130,7 +132,7 @@ class Manager():
                     executable.setPath(path)
                     self.executable_list.addExecutable(executable)
                     
-    def _newExecutable(self, program: Program) -> RR.Executable:
+    def _newExecutable(self, program: Program) -> rr.Executable:
         try:
             print(f"Creating new executable: {program.name}")
             executable_class = program.cls
@@ -145,7 +147,7 @@ class Manager():
         run_indices = [i for i, line in enumerate(lines) if line.strip() == "0"]
         return len(run_indices), lines
 
-    def split_input(self, from_exe: RR.Executable, to_exe: list[RR.Executable]|RR.Executable) -> None:
+    def split_input(self, from_exe: rr.Executable, to_exe: list[rr.Executable]|rr.Executable) -> None:
         if not isinstance(to_exe, list):
             to_exe = [to_exe]
 
@@ -167,7 +169,7 @@ class ExecutableList():
     def __init__(self):
         self.executables = {}
 
-    def addExecutable(self, executable: RR.Executable) -> None:
+    def addExecutable(self, executable: rr.Executable) -> None:
         if executable.program.name not in self.executables:
             self.executables[executable.program.name] = []
         #check if the executable is already in the list
@@ -176,7 +178,7 @@ class ExecutableList():
         else:
             self.executables[executable.program.name].append(executable)
 
-    def removeExecutable(self, executable: RR.Executable) -> None:
+    def removeExecutable(self, executable: rr.Executable) -> None:
         if executable.program.name in self.executables:
             if executable in self.executables[executable.program.name]:
                 self.executables[executable.program.name].remove(executable)
@@ -187,7 +189,7 @@ class ExecutableList():
         else:
             raise ValueError(f"Executable {executable} not found in list.")
 
-    def getExecutables(self, program: Program) -> list[RR.Executable]:
+    def getExecutables(self, program: Program) -> list[rr.Executable]:
         if program.name in self.executables:
             return self.executables[program.name]
         else:
@@ -202,7 +204,7 @@ class ExecutableList():
 
 if __name__ == "__main__":
     from time import time
-    from AEVAP import AEVAP
+    from src.models.aevap import AEVAP
     from pathlib import Path
 
     run_information = {
@@ -222,7 +224,7 @@ if __name__ == "__main__":
     aevap.inputs["TAE"].setValue(81)
     number_of_trials = 1
     
-    for max_workers in range(1,26,2):
+    for max_workers in range(20,26,2):
         for max_TAE in range(82, 89, 3):
             for max_TWB in range(80, 81, 3):
                 for max_CFM in range(6000, 6100, 100):

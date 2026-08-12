@@ -1,7 +1,7 @@
 from pathlib import Path
 from tkinter import Tk
 
-from RREnums import Program
+from src.models.rr_enums import Program
 import subprocess
 from itertools import product
 
@@ -68,7 +68,7 @@ class Input():
         return iter(self.values)
     
     def Widget(self, *args, **kwargs):
-        from RRX import InputWidget
+        from src.views.rrx import InputWidget
         self.widget = InputWidget(input = self, *args, **kwargs)
         return self.widget
 
@@ -111,7 +111,7 @@ class InputClass(Input):
         yield self.getValue()
 
     def Widget(self, *args, **kwargs):
-        from RRX import InputClassWidget
+        from src.views.rrx import InputClassWidget
         self.widget = InputClassWidget(input = self, *args, **kwargs)
         return self.widget
 
@@ -154,7 +154,7 @@ class InputRange(Input):
         yield self.getValue()
 
     def Widget(self, *args, **kwargs):
-        from RRX import InputRangeWidget
+        from src.views.rrx import InputRangeWidget
         self.widget = InputRangeWidget(input = self, *args, **kwargs)
         return self.widget
 
@@ -191,7 +191,7 @@ class Executable():
         self.input_sequence = input_sequence
         self.result_mapping = result_mapping
         self.required_dats = required_dats
-        from RRData import Data
+        from src.models.rr_data import Data
         self.data = Data(parent=self)
 
     def _initialize_inputs(self, input_sequence: list[list[Input]]):
@@ -219,8 +219,7 @@ class Executable():
 
     def run(self):
         try:
-            result = subprocess.run([self.program.exe, self.data.input.input_file.name], capture_output=True, text=True, cwd=self.path)
-            #print("AEVAP Output: ", result.stdout)
+            result = subprocess.run([self.path / self.program.exe, self.data.input.input_file.name], capture_output=True, text=True, cwd=self.path)
             if result.stderr:
                 print("AEVAP Error: ", result.stderr)
             self.data.output.load()
@@ -279,7 +278,7 @@ class Executable():
         return input_string
     
     def Widget(self, *args, **kwargs):
-        from RRX import ExecutableWidget
+        from src.views.rrx import ExecutableWidget
         self.widget = ExecutableWidget(executable=self, *args, **kwargs)
         self.widget.pack(side="left")
         return self.widget
@@ -338,7 +337,7 @@ class InputFile():
         self.name = name
 
     def Widget(self, *args, **kwargs):
-        from RRX import InputFileWidget
+        from views.rrx import InputFileWidget
         self.widget = InputFileWidget(input_file=self, *args, **kwargs)
         return self.widget
     
@@ -419,7 +418,7 @@ class Results():
             raise KeyError(f"Result key '{key}' not found.")
 
 if __name__ == "__main__":
-    from AEVAP import AEVAP
+    from src.models.aevap import AEVAP
     from tkinterdnd2 import TkinterDnD
     root = TkinterDnD.Tk()
     aevap = AEVAP()

@@ -1,4 +1,4 @@
-from RR import Executable
+from src.models.rr import Executable
 from pathlib import Path
 
 
@@ -20,8 +20,8 @@ class InputData():
         self.start_index = 0
         self.end_index = 0
         self._expected_number_of_results = 0
-        from rr_input_text import InputText
-        self.string_input = InputText(self)
+        from src.models.string_input import StringInput
+        self.string_input = StringInput(self)
 
     def __str__ (self):
         """
@@ -662,7 +662,7 @@ class InputData():
         """
         Returns a Tkinter widget for displaying and editing the input data.
         """
-        from rr_input_text import Widget
+        from src.controllers.string_inputs_controller import Widget
         return Widget(self, *args, **kwargs)
 
     def set_data(self, data: str|Path, force: bool = False):
@@ -864,7 +864,7 @@ class Data():
 
     
 if __name__ == "__main__":
-    from AEVAP import AEVAP
+    from models.aevap import AEVAP
     aevap = AEVAP()
     data = Data(aevap)
     # data.input.import_data_from_dat(Path("d1.dat"))

@@ -1,4 +1,4 @@
-from RR import InputValue
+from models.rr import InputValue
     
 class C(InputValue):
     def __init__(self, value = None):

@@ -2,12 +2,12 @@ from doctest import master
 from sys import executable
 import tkinter as tk
 from tkinter import ttk
-import RR
+import src.models.rr as rr
 # module for creating GUI components
 
 
 class ExecutableWidget(tk.Frame):
-    def __init__(self, master, executable: RR.Executable, *args, **kwargs):
+    def __init__(self, master, executable: rr.Executable, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self.dat_frame = executable.data.input.get_widget(master=self)
         self.dat_frame.pack(side="left", fill="x", pady=5, padx=5)
@@ -22,7 +22,7 @@ class ExecutableWidget(tk.Frame):
 class InputWidget(tk.Frame):
     # A basic widget containing a frame and only a text box for the input
     # also includes the input description and code
-    def __init__(self, master, input: RR.Input, *args, **kwargs):
+    def __init__(self, master, input: rr.Input, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self.input = input
         self.frame = ttk.Frame(master, width=600, height=300, relief=tk.RIDGE, borderwidth=2)
@@ -63,7 +63,7 @@ class InputWidget(tk.Frame):
             self.entry.insert(0, value)
             self.currentvalue = value
                 
-    def bindExecutable(self, executable: RR.Executable):
+    def bindExecutable(self, executable: rr.Executable):
         self.executable = executable
             
     def getExecutable(self):
@@ -79,7 +79,7 @@ class InputRangeWidget(InputWidget):
     # the leftmost element in the additional row is a checkbox with the label "multi value"
     # if the checkbox is unchecked. then the min and max entries are disabled.
     # if the checkbox is checked, the min and max entries are enabled.
-    def __init__(self, master, input: RR.InputRange, *args, **kwargs):
+    def __init__(self, master, input: rr.InputRange, *args, **kwargs):
         super().__init__(master, input, *args, **kwargs)
         self.min_entry = ttk.Entry(self.frame, width=10)
         self.min_entry.config(state=tk.DISABLED)
@@ -132,7 +132,7 @@ class InputClassWidget(InputWidget):
     # the leftmost element in the additional row is a checkbox with the label "multi value"
     # if the checkbox is unchecked. then multiselect is disabled
     # if the checkbox is checked, then multiselect is enabled
-    def __init__(self, master, input: RR.InputClass, *args, **kwargs):
+    def __init__(self, master, input: rr.InputClass, *args, **kwargs):
         super().__init__(master, input, *args, **kwargs)
         self.multi_value_var = tk.BooleanVar()
         self.entry.destroy()
