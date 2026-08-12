@@ -66,9 +66,11 @@ from src.models.aevap import AEVAP
 # }
 
 class Manager():
-    def __init__(self, directory: Path = Path.cwd()):
+    def __init__(self):
         self.executable_list = ExecutableList()
-        self.directory = directory / "programs"
+        self.directory = Path.cwd()
+        self.spooled_programs_path = self.directory / "programs"
+        self.source_programs_path = self.directory / "KCC"
         self._findExistingExecutables()
 
     def run(self, executable: rr.Executable, max_workers=None):
@@ -81,17 +83,17 @@ class Manager():
         
     def spoolUp(self, executable: rr.Executable) -> rr.Executable:
         new_id = self._getNewID()
-        new_path = self.directory / str(new_id)
+        new_path = self.spooled_programs_path / str(new_id)
         Path(new_path).mkdir(parents=True, exist_ok=True)
 
         dats_to_copy = executable.required_dats
 
         #copy the executable and the dat files to the specified path
-        shutil.copy(executable.program.exe, new_path)
+        shutil.copy(self.source_programs_path / executable.program.exe, new_path)
         factory = executable.program.cls
         new_executable = factory()
         for file_name in dats_to_copy:
-            shutil.copy(file_name.dat, new_path)
+            shutil.copy(self.source_programs_path / file_name.dat, new_path)
         new_executable.setPath(new_path)
         self.executable_list.addExecutable(new_executable)
         return new_executable
@@ -222,7 +224,7 @@ if __name__ == "__main__":
     aevap.inputs["TAE"].setValue(81)
     number_of_trials = 1
     
-    for max_workers in range(1,26,2):
+    for max_workers in range(20,26,2):
         for max_TAE in range(82, 89, 3):
             for max_TWB in range(80, 81, 3):
                 for max_CFM in range(6000, 6100, 100):
