@@ -1,4 +1,5 @@
-from models.rr import Executable, Input, InputRange, InputClass, InputLine
+from models.rr import Executable
+from models.input import Input
 from models.rr_components import Coil, Distributor, Header, Air, Refrigerant
 from models.rr_enums import Program
 
