@@ -1,86 +1,155 @@
-from src.models.string_input import StringInput as StringInput
+from src.models.string_input import ParseError, StringInput as StringInput
 from src.views.string_input_view import Widget as StringInputView
 from src.controllers.controller import BaseController
 from src.models.input import Input, InputType
 from src.views.input_view import InputView, GroupFrame, InputWidget
+from src.models.rr_data import InputData
 
 import tkinter as tk
 from pathlib import Path
 from enum import Enum
 
 class MultiType(Enum):
-    LIST = "_InputStateList"
-    SET = "_InputStateSet"
-    RANGE = "_InputStateRange"
-    SINGLE = "_InputStateSingle"
+    LIST = "List"
+    SET = "Set"
+    RANGE = "Range"
+    SINGLE = "Single"
+
+    @property
+    def open_char(self):
+        match self:
+            case MultiType.LIST:
+                return "["
+            case MultiType.SET:
+                return "{"
+            case MultiType.RANGE:
+                return "("
+            case MultiType.SINGLE:
+                return "["
+            case _:
+                raise ValueError(f"Invalid MultiType '{self}'.")
+            
+    @property
+    def close_char(self):
+        match self:
+            case MultiType.LIST:
+                return "]"
+            case MultiType.SET:
+                return "}"
+            case MultiType.RANGE:
+                return ")"
+            case MultiType.SINGLE:
+                return "]"
+            case _:
+                raise ValueError(f"Invalid MultiType '{self}'.")
 
 class _Input():
-    def __init__(self, input: Input):
+    def __init__(self, input: Input, controller: BaseController):
+        self.controller = controller
         self.input = input
-        self.cat = None
-        self.state = _MultiState(self)
+        self._state = _MultiStateSingle(self)
         self.group = "0"
         self.values = []
+        self.view = None
+
+    def handle_state_change(self, event):
+        new_type = MultiType(event.widget.get())
+        self.state = new_type
+
+    def handle_group_change(self, event):
+        new_group = event.widget.get()
+        self.group = new_group    
+
+    def handle_value_change(self, event):
+        entry = self.view.entry.entry.get()
+        group = self.view.group.value
+        multi_type = MultiType(self.view.multi_type.value)
+        text = ""
+        if multi_type != MultiType.SET:
+            text = group
+        text += multi_type.open_char + entry + multi_type.close_char
+        self.view.error_label.clear()
+        try:
+            self.controller.string_input.validate_input(self.input.code, text)
+            self.values = self.controller.string_input.set_values_for_input(self.input.code, text)
+        except ParseError as e:
+            self.view.error_label.message = e.message
+
+        print(f"Input '{self.input.code}' values: {self.values}")
         
 
     @property
     def state(self):
-        return self.multi.state
+        return self._state
 
     @state.setter
     def state(self, value: MultiType):
         if not isinstance(value, MultiType):
             raise ValueError(f"State must be an instance of MultiType Enum, got {type(value)}")
-        self.multi.exit()
+        self.state.exit()
         match value:
             case MultiType.LIST:
-                self.multi = _MultiStateList(self)
+                self._state = _MultiStateList(self)
             case MultiType.SET:
-                self.multi = _MultiStateSet(self)
+                self._state = _MultiStateSet(self)
             case MultiType.RANGE:
-                self.multi = _MultiStateRange(self)
+                self._state = _MultiStateRange(self)
             case MultiType.SINGLE:
-                self.multi = _MultiStateSingle(self)
+                self._state = _MultiStateSingle(self)
             case _:
                 raise ValueError(f"Invalid state '{value}' for input '{self.input.code}'.")
-        self.multi.enter()
+        self.state.enter()
 
 class InputsController(BaseController):
-    def __init__(self, model: list[Input]|Input, view: InputView):
+    def __init__(self, model: list[Input]|Input, view: InputView, input_data: InputData):
         super().__init__()
-        self.model: dict[str, _Input] = {}
+        self.view = view
         if isinstance(model, Input):
             model = [model]
-        for input in model:
-            self.model[input.code] = _Input(input)
-        self.view = view
 
+        self._category_views = self._factory_category_frames(model)
+        self.model = self._factory_inputs(model)
+        self.string_input = StringInput(input_data)
 
-    def _set_state(self, input: Input, state: MultiType):
-        if input.code not in self.model:
-            raise ValueError(f"Input code '{input.code}' not found in model.")
-
-        if not isinstance(state, MultiType):
-            raise ValueError(f"State must be an instance of MultiType Enum, got {type(state)}")
+    def _get_category_view(self, category: str) -> GroupFrame:
+        if category is None:
+            category = "None"
+        if category not in self._category_views:
+            raise ValueError(f"Category '{category}' not found in category views.")
+        return self._category_views[category]
         
-        self.model[input.code].multi.exit()
-        match state:
-            case MultiType.LIST:
-                self.model[input.code]["state"] = _MultiStateList()
-            case MultiType.SET:
-                self.model[input.code]["state"] = _MultiStateSet()
-            case MultiType.RANGE:
-                self.model[input.code]["state"] = _MultiStateRange()
-            case MultiType.SINGLE:
-                self.model[input.code]["state"] = _MultiStateSingle()
-            case _:
-                raise ValueError(f"Invalid state '{state}' for input '{input.code}'.")
+    def _factory_category_frames(self, inputs: list[Input]) -> dict[str, GroupFrame]:
+        s = set(input.cat if input.cat is not None else "None" for input in inputs)
+        categories: dict[str, GroupFrame] = {}
+        for category in sorted(s):
+            categories[category] = GroupFrame(self.view.scrollable_frame, group=category)
+            self.view.add_category(category, categories[category])
+        return categories
+
+    def _factory_inputs(self, inputs: list[Input]) -> dict[str, _Input]:
+        model: dict[str, _Input] = {}
+        for input in inputs:
+            _input = _Input(input, self)
+            _input.view = InputWidget(self._get_category_view(input.cat), text=input.code)
+            _input.view.multi_type.options = [e.value for e in MultiType]
+            _input.view.multi_type.value = _input.state.type.value
+            _input.view.group.options = [str(i) for i in range(10)]
+            _input.view.group.value = _input.group
+            _input.view.description.config(text=input.description)
+            _input.view.bind_multi_type_callback(_input.handle_state_change)
+            _input.view.bind_group_change(_input.handle_group_change)
+            _input.view.bind_modified_callback(_input.handle_value_change)
+            self.view.add_input(input.code, _input.view, input.cat)
+            model[input.code] = _input
+        return model
+
+
             
 
 class _MultiState():
     def __init__(self, parent: _Input):
         self.parent = parent
-        self._type = None
+        self._type = MultiType.SINGLE
         self._range = {
             "START": None,
             "STOP": None,
@@ -100,6 +169,12 @@ class _MultiState():
     @property
     def values(self):
         return self.parent.values
+
+    @values.setter
+    def values(self, value: list):
+        if not isinstance(value, list):
+            raise ValueError(f"Values must be a list, got {type(value)}")
+        self.parent.values = value
 
     @property
     def type(self):
@@ -164,6 +239,9 @@ class _MultiStateRange(_MultiState):
             self._range["STOP"] = max(self.values) if num_values > 0 else 0
 
     def exit(self):
+        if self.range["START"] is None or self.range["STOP"] is None or self.range["NUM"] is None:
+            self.values = []
+            return
         self.values = fixed_range(self.range["START"], self.range["STOP"], self.range["NUM"])
             
 
@@ -173,6 +251,22 @@ class _MultiStateSingle(_MultiState):
         self.values = [self.values[0]] if self.values else []
 
             
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("Input View Test")
+    input_view = InputView(root)
+    input_view.pack(fill="both", expand=True)
 
+    inputs = []
+    from src.models.aevap import AEVAP
+    aevap = AEVAP()
+    for i, row in enumerate(aevap.input_sequence):
+        for col, input in enumerate(row):
+            input._category = f"Row {i+1}"
+            inputs.append(input)
+
+    controller = InputsController(inputs, input_view, aevap.data.input)
+
+    root.mainloop()
 
     

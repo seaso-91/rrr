@@ -68,6 +68,7 @@ class StringInputsController(BaseController):
             else:
                 start, end = self.model.input.current()
             self.view.text_area.select(start, end)
+            self.set_cursor_position()
         self.update_input_label()
 
     def handle_key_tab(self, event):

@@ -11,8 +11,12 @@ class Input():
                  data_type: type,
                  description:str,
                  value = None,
-                 is_required: bool = False):
+                 is_required: bool = False,
+                 category: str = None,
+                 *args,
+                 **kwargs):
         
+        self._category = category
         self._code = code
         self._data_type = data_type
         self._description = description
@@ -20,6 +24,10 @@ class Input():
         self._value = []
         self.value = value
 
+    @property
+    def cat(self):
+        return self._category
+    
     @property
     def description(self):
         return self._description
@@ -216,12 +224,15 @@ class InputRange(Input):
                 values.append(new_value)
                 set_values.add(new_value)
         except Exception as e:
-            raise ValueError(f"Error coercing value for {self.code}: {e}") from
+            raise ValueError(f"Error coercing value for {self.code}: {e}") from e
 
-        if self.min_value is not None and min(set_values) < self.min_value:
-            raise ValueError(f"Value {value} is less than the minimum value {self.min_value} for {self.code}.")
-        if self.max_value is not None and max(set_values) > self.max_value:
-            raise ValueError(f"Value {value} is greater than the maximum value {self.max_value} for {self.code}.")
+        min = min(set_values) if set_values else None
+        max = max(set_values) if set_values else None
+
+        if self.min_value is not None and min is not None and min < self.min_value:
+            raise ValueError(f"Value {min} is less than the minimum value {self.min_value} for {self.code}.")
+        if self.max_value is not None and max is not None and max > self.max_value:
+            raise ValueError(f"Value {max} is greater than the maximum value {self.max_value} for {self.code}.")
         
         self._values = values
 
