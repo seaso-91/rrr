@@ -1,4 +1,5 @@
-from src.models.rr import Executable, Input, InputRange, InputClass, InputLine
+from src.models.rr import Executable
+from src.models.input import Input, InputRange, InputClass
 from src.models.rr_components import Coil, Distributor, Header, Air, Refrigerant
 from src.models.rr_enums import Program, Dat
 from pathlib import Path
@@ -10,97 +11,42 @@ from pathlib import Path
 
 class AEVAP(Executable):
     def __init__(self):
-        result_mapping = {"QT": 38,
-                          "QS": 39,
-                          "DBL": 40,
-                          "WG": 41,
-                          "COILPD": 42,
-                          "HDRPD": 43,
-                          "ORIFPD": 44,
-                          "DISTPD": 45,
-                          "LB/MIN": 46,
-                          "REFVEL": 47,
-                          "CHRG": 48,
-                          "LBS FIN": 52,
-                          "LBS TUB": 53,
-                          "WBL": 54,
-                          "LATENT": 55,
-                          "INT VOL": 56,
-                          "TUBSVAP": 59,
-                          "LEV DEW": 60,
-                          "ERROR": 61,
-                          "UM": 62
-                          }
+
         required_dats = [Dat.COIL, Dat.COIL1, Dat.REF]
-        # inputSequence = [["TAE", "TWB", "LT", "IET", "FET", "INC", "FNO", "CR", "FC", "FCT", "P"],
-        #                  ["N", "QTY", "FPI", "ROWS", "FH", "FL", "CFM", "SA", "CKT", "DL", "OD", "NZ", "SPHT",
-        #                   "FLO", "FIN", "MTL", "T", "GD", "A", "NR", "B", "HDR", "CON", "FW", "RFW", "UM"]]
 
         input_sequence = [[TAE(), TWB(), LT(), IET(), FET(), INC(), FNO(), CR(), FC(), FCT(), P()],
                           [N(), QTY(), FPI(), ROWS(), FH(), FL(), CFM(), SA(), CKT(), DL(), OD(), NZ(), SPHT(),
                            FLO(), FIN(), MTL(), T(), GD(), A(), NR(), B(), HDR(), CON(), FW(), RFW(), UM()]]
-        # inputs = {}
-        # inputs["TAE"] = TAE()
-        # inputs["TWB"] = TWB()
-        # inputs["LT"] = LT()
-        # inputs["IET"] = IET()
-        # inputs["FET"] = FET()
-        # inputs["INC"] = INC()
-        # inputs["FNO"] = FNO()
-        # inputs["CR"] = CR()
-        # inputs["FC"] = FC()
-        # inputs["FCT"] = FCT()
-        # inputs["P"] = P()
-        # inputs["N"] = N()
-        # inputs["QTY"] = QTY()
-        # inputs["FPI"] = FPI()
-        # inputs["ROWS"] = ROWS()
-        # inputs["FH"] = FH()
-        # inputs["FL"] = FL()
-        # inputs["CFM"] = CFM()
-        # inputs["SA"] = SA()
-        # inputs["CKT"] = CKT()
-        # inputs["DL"] = DL()
-        # inputs["OD"] = OD()
-        # inputs["NZ"] = NZ()
-        # inputs["SPHT"] = SPHT()
-        # inputs["FLO"] = FLO()
-        # inputs["FIN"] = FIN()
-        # inputs["MTL"] = MTL()
-        # inputs["T"] = T()
-        # inputs["GD"] = GD()
-        # inputs["A"] = A()
-        # inputs["NR"] = NR()
-        # inputs["B"] = B()
-        # inputs["HDR"] = HDR()
-        # inputs["CON"] = CON()
-        # inputs["FW"] = FW()
-        # inputs["RFW"] = RFW()
-        # inputs["UM"] = UM()
-        # inputs["QT"] = QT()
-        # inputs["QS"] = QS()
-        # inputs["DBL"] = DBL()
-        # inputs["WG"] = WG()
-        # inputs["COILPD"] = COILPD()
-        # inputs["HDRPD"] = HDRPD()
-        # inputs["ORIFPD"] = ORIFPD()
-        # inputs["DISTPD"] = DISTPD()
-        # inputs["LB/MIN"] = LBMIN()
-        # inputs["REFVEL"] = REFVEL()
-        # inputs["CHRG"] = CHRG()
-        # inputs["LBS FIN"] = LBSFIN()
-        # inputs["LBS TUB"] = LBSTUB()
-        # inputs["WBL"] = WBL()
-        # inputs["LATENT"] = LATENT()
-        # inputs["INT VOL"] = INTVOL()
-        # inputs["TUBSVAP"] = TUBSVAP()
-        # inputs["LEV DEW"] = DPL()
-        # for key, input_obj in inputs.items():
-        #     input_obj.parent = self
-        super().__init__(program=Program.AEVAP,
-                         result_mapping=result_mapping, 
-                         input_sequence=input_sequence, 
-                         required_dats=required_dats)
+
+        result_mapping = {
+            "QT": 38,
+            "QS": 39,
+            "DBL": 40,
+            "WG": 41,
+            "COILPD": 42,
+            "HDRPD": 43,
+            "ORIFPD": 44,
+            "DISTPD": 45,
+            "LB/MIN": 46,
+            "REFVEL": 47,
+            "CHRG": 48,
+            "LBS FIN": 52,
+            "LBS TUB": 53,
+            "WBL": 54,
+            "LATENT": 55,
+            "INT VOL": 56,
+            "TUBSVAP": 59,
+            "LEV DEW": 60,
+            "ERROR": 61,
+            "UM": 62
+            }
+
+        super().__init__(
+            program=Program.AEVAP,
+            result_mapping=result_mapping, 
+            input_sequence=input_sequence, 
+            required_dats=required_dats
+            )
 
     def setCoil(self, coil: Coil):
         self.setInput("FC",coil.finCoatingFactor)
@@ -139,7 +85,8 @@ class AEVAP(Executable):
             grooveDepth=self.inputs["GD"],
             ridgeApexAngle=self.inputs["A"],
             numberOfRidges=self.inputs["NR"],
-            leadHelixAngle=self.inputs["B"])
+            leadHelixAngle=self.inputs["B"]
+            )
         return coil
 
     def setDistributor(self, distributor: Distributor):

@@ -40,42 +40,40 @@ class StringInput():
         self.input = _Input(self)
         self.cursor_position = 1
 
-    def validate_input(self, input, text: str):
+    def validate_input(self, code: str, text: str):
         """
         Validates the input text against the expected input sequence for a specific input.
         Raises a ParseError if any validation fails.
         """
-        try:
-            fix = 1/0
-        except Exception as e:
-            print("=================This hasn't been debugged yet.=================")
-            raise e
         self._enter_state(State.INITIALIZING)
-
-        while self._iter_position < len(text):
+        self._set_state(State.APPENDING_VALUE)
+        self._input_index = self.get_input_index(code)
+        self._text = text
+        while self._iter_position < len(text)-1:
             self._state.enter()
             self._state.validate()
             self._state.exit()
-        if self._state.name != State.SETTING_VALUE.value:
+        if self._validate_value() is False:
             raise ParseError(self.iter_position, f"Unexpected end of input for '{self._input.code}'.")
 
-    def set_values_for_input(self, input, text: str):
+    def set_values_for_input(self, code: str, text: str) -> list:
         """
         Sets the values for the current input in the data object using the provided text.
         Raises a ParseError if any validation fails.
         """
-        try:
-            fix = 1/0
-        except Exception as e:
-            print("=================This hasn't been debugged yet.=================")
-            raise e
-        
         self._enter_state(State.INITIALIZING)
-
-        while self._iter_position < len(text):
+        self._set_state(State.APPENDING_VALUE)
+        self._input_index = self.get_input_index(code)
+        self._text = text
+        while self._iter_position < len(text) -1:
             self._state.enter()
             self._state.set_values()
             self._state.exit()
+        self._push_stack_to_value()
+        values = self._values.copy()
+        self._set_values()
+        return values
+
 
     def validate(self):
         """
@@ -105,6 +103,21 @@ class StringInput():
             self._state.set_values()
             self._state.exit()
 
+    def get_input(self):
+        if self._input_index < 0 or self._input_index >= len(self._input_list):
+            return None
+        return self._input_list[self.input.index][0]
+    
+    def get_input_index(self, code: str) -> int:
+        """
+        Returns the index of the input with the given code in the input list.
+        Raises a ValueError if the input code is not found.
+        """
+        for idx, (input, _) in enumerate(self._input_list):
+            if input.code == code:
+                return idx
+        raise ValueError(f"Input with code '{code}' not found.")
+    
     @property
     def is_validated(self):
         return self._is_validated
