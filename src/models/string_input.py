@@ -1,5 +1,5 @@
 from enum import Enum, auto
-
+## FIXME the StringInput class has _input and input properties. they are mixed up and confusing
 
 class State(Enum):
     INITIALIZING = "_Initializing"
@@ -343,6 +343,10 @@ class _Input():
         self.parent = parent
 
     @property
+    def code(self):
+        return self.parent._input.code
+    
+    @property
     def index(self):
         """
         returns the index of the current group or value for the current cursor position.
@@ -435,11 +439,11 @@ class _State():
         return self.__class__.__name__
     
     def enter(self):
-        # if self.parent._char == "\n":
-        #     char = "newline"
-        # else:
-        #     char = self.parent._char
-        # print(f"{self.__class__.__name__} for {self.parent.input.code}: Position: {self.parent.iter_position}, char='{char}', stack='{self.parent._stack}', values={self.parent._values}, group='{self.parent._group}'")
+        if self.parent._char == "\n":
+            char = "newline"
+        else:
+            char = self.parent._char
+        print(f"{self.__class__.__name__} for {self.parent.input.code}: Position: {self.parent.iter_position}, char='{char}', stack='{self.parent._stack}', values={self.parent._values}, group='{self.parent._group}'")
         pass
 
     def exit(self):
