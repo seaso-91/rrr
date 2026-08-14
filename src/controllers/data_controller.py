@@ -56,6 +56,21 @@ class DataController(BaseController):
         self._groups[code] = group
         self._values[code] = values
 
+    def validate_value(self, code: str, value: str) -> bool:
+        """
+        Validates a value for a given input code using the input's validate method.
+        Args:
+            code (str): The input code for which to validate the value.
+            value (str): The value to validate for the input code.
+        Returns:
+            bool: True if the value is valid for the given input code, False otherwise.
+        """
+        # validate the input exists
+        if code not in self.parent.inputs:
+            raise ValueError(f"Input '{code}' does not exist")
+        # validate the value using the input's validate method
+        return self.parent.inputs[code].validate(value)
+
     def export_data(self, csv_file: Path):
         """
         Exports input data to a CSV file.
@@ -587,20 +602,7 @@ class InputData():
         else:
             self.set_values(code, [string], '0', force=force)
 
-    def validate_value(self, code: str, value: str) -> bool:
-        """
-        Validates a value for a given input code using the input's validate method.
-        Args:
-            code (str): The input code for which to validate the value.
-            value (str): The value to validate for the input code.
-        Returns:
-            bool: True if the value is valid for the given input code, False otherwise.
-        """
-        # validate the input exists
-        if code not in self.parent.inputs:
-            raise ValueError(f"Input '{code}' does not exist")
-        # validate the value using the input's validate method
-        return self.parent.inputs[code].validate(value)
+
 
 
 
