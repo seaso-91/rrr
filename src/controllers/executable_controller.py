@@ -5,7 +5,7 @@ import shutil
 import random
 from src.models.data import InputStatus, OutputData, InputData
 from src.controllers.controller import BaseController
-import src.models.rr as rr
+import src.models.executable as executable
 from src.models.rr_enums import Dat, Program
 import copy
 from src.models.aevap import AEVAP
@@ -70,7 +70,7 @@ from src.models.aevap import AEVAP
 from enum import Enum
 
 class ExeController(BaseController):
-    def __init__(self, executable: rr.Executable, input_data: InputData, output_data: OutputData):
+    def __init__(self, executable: executable.Executable, input_data: InputData, output_data: OutputData):
         super().__init__()
         self.executable = executable
         self.input_data = input_data
@@ -84,7 +84,7 @@ class ExeController(BaseController):
             executables = self.executable_list.get(number_of_runs)
             for executable in executables:
                 executable.data = self.input_data.get(number_of_runs=number_of_runs // len(executables) + 1)
-
+ 
             self.batch_run(executables=executables)
 
         for executable in executables:
@@ -93,12 +93,12 @@ class ExeController(BaseController):
             self.executable_list.check_in(executable)
                 
 
-    def batch_run(self, executables: list[rr.Executable]):
+    def batch_run(self, executables: list[executable.Executable]):
         with ProcessPoolExecutor(max_workers=len(executables)) as pool:
             return list(pool.map(self._run_job, executables))
         
     @staticmethod
-    def _run_job(executable: rr.Executable) -> rr.Executable:
+    def _run_job(executable: executable.Executable) -> executable.Executable:
         executable.run()
         return executable
 
@@ -115,7 +115,7 @@ class ExecutableList():
         self.spooled_programs_path = spooled_programs_path
         self.source_programs_path = source_programs_path
 
-    def addExecutable(self, executable: rr.Executable) -> None:
+    def addExecutable(self, executable: executable.Executable) -> None:
         if executable.program != self.program:
             raise ValueError(f"Executable {executable.program.name} does not match list program {self.program.name}.")
         #check if the executable is already in the list
@@ -124,7 +124,7 @@ class ExecutableList():
         else:
             self.executables[executable.path.name] = {"status": ExecutableStatus.READY, "executable": executable}
 
-    def get(self, number_of_executables) -> list[rr.Executable]:
+    def get(self, number_of_executables) -> list[executable.Executable]:
         result_list = []
         while number_of_executables > self.number_of_ready_executables:
             self.spool_up()
@@ -135,14 +135,14 @@ class ExecutableList():
             number_of_executables -= 1
         return result_list
 
-    def check_out(self) -> rr.Executable:
+    def check_out(self) -> executable.Executable:
         for key in self.executables.keys():
             if self.executables[key]["status"] == ExecutableStatus.READY:
                 self.executables[key]["status"] = ExecutableStatus.BUSY
                 return self.executables[key]["executable"]
         raise ValueError("No ready executables available.")
 
-    def check_in(self, executables: list[rr.Executable]|rr.Executable) -> None:
+    def check_in(self, executables: list[executable.Executable]|executable.Executable) -> None:
         if isinstance(executables, list):
             executables = [executables]
         for executable in executables:
@@ -154,7 +154,7 @@ class ExecutableList():
             else:
                 raise ValueError(f"Executable {executable} not found in list.")
 
-    def pop(self) -> rr.Executable:
+    def pop(self) -> executable.Executable:
         #pop the first item in the dictionary
         for key in self.executables.keys():
             if self.executables[key]["status"] == ExecutableStatus.READY:
@@ -165,7 +165,7 @@ class ExecutableList():
     def number_of_ready_executables(self) -> int:
         return len([exe for exe in self.executables.values() if exe["status"] == ExecutableStatus.READY])
 
-    def _kill(self, executable: rr.Executable) -> bool:
+    def _kill(self, executable: executable.Executable) -> bool:
         #delete the directory and all its contents
         path = executable.path
         if path.exists() and path.is_dir():
@@ -193,7 +193,7 @@ class ExecutableList():
                     executable.setPath(path)
                     self.executable_list.addExecutable(executable)
                     
-    def _new_executable(self) -> rr.Executable:
+    def _new_executable(self) -> executable.Executable:
         try:
             print(f"Creating new executable: {self.program.name}")
             executable_class = self.program.cls

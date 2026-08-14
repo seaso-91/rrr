@@ -1,4 +1,4 @@
-from models.rr import InputValue
+from src.models.executable import InputValue
     
 class C(InputValue):
     def __init__(self, value = None):

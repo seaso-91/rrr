@@ -1,6 +1,6 @@
 from src.controllers.controller import BaseController
 
-from src.models.rr import Executable
+from src.models.executable import Executable
 from pathlib import Path
 
 class DataController(BaseController):

@@ -1,4 +1,4 @@
-from models.rr import Executable
+from src.models.executable import Executable
 from models.input import Input
 from models.rr_components import Coil, Distributor, Header, Air, Refrigerant
 from models.rr_enums import Program
