@@ -1,11 +1,13 @@
+from src.controllers.controller import BaseController
+
 from src.models.rr import Executable
 from pathlib import Path
 
-
-class InputData():
+class DataController(BaseController):
     def __init__(self, parent: Executable):
+        super().__init__()
         self.parent = parent
-        self._data = {
+        self._input_data = {
             "group": [],
             "code": [],
             "value": []
@@ -15,13 +17,208 @@ class InputData():
 
         # A dictionary to store the values of each input code
         self._values = dict()
-        self.input_file = self.parent.path / "d1.dat"
 
-        self.start_index = 0
-        self.end_index = 0
-        self._expected_number_of_results = 0
-        from src.models.string_input import StringInput
-        self.string_input = StringInput(self)
+    def set_values(self, code: str, values: list[str]|str, group: str, force: bool = False):
+        """
+        Sets one or more values for a given input code and group.
+        If the input code already exists, its values will be replaced with the new values.
+        
+        Args:
+            code (str): The input code for which to set values.
+            values (list[str]|str): The values to set for the input code.
+            group (str): The group to which the input code belongs.
+            force (bool): If True, the values will be set even if they are invalid. Default is False.
+        """
+        if isinstance(values, str):
+            values = [values]
+
+        if not force:
+            self.validate_group(group)
+
+            # remove old values
+            for i in range(len(self._input_data["code"])-1, -1, -1):
+                if self._input_data["code"][i] == code:
+                    del self._input_data["group"][i]
+                    del self._input_data["code"][i]
+                    del self._input_data["value"][i]
+
+            # validate new values
+            for value in values:
+                if self.validate_value(code, value) is False:
+                    raise ValueError(f"Invalid value '{value}' for input '{code}'")
+                
+        # add new values
+        for value in values:
+            self._data["group"].append(group)
+            self._data["code"].append(code)
+            self._data["value"].append(value)
+
+        self._groups[code] = group
+        self._values[code] = values
+
+    def export_data(self, csv_file: Path):
+        """
+        Exports input data to a CSV file.
+
+        Args:
+            csv_file (Path): The path to the CSV file to export the input data to.
+        """
+        with open(csv_file, "w") as f:
+            f.write("group,input,value\n")
+            for i in range(len(self._data["group"])):
+                f.write(f"{self._data['group'][i]},{self._data['code'][i]},{self._data['value'][i]}\n")
+
+    def import_csv(self, csv_file: Path):
+        """
+        Imports input data from a CSV file.
+
+        Args:
+            csv_file (Path): The path to the CSV file containing the input data.
+        """
+        self._clear()
+        with open(csv_file, "r") as f:
+            lines = f.readlines()
+        for line in lines[1:]:
+            group, code, value = line.strip().split(",")
+            self._input_data["group"].append(group)
+            self._input_data["code"].append(code)
+            self._input_data["value"].append(value)
+            self._groups[code] = group
+            if code not in self._values:
+                self._values[code] = []
+            self._values[code].append(value)
+
+    def import_dat(self, dat_file: Path):
+        """
+        Imports input data from a .dat file.
+
+        Args:
+            dat_file (Path): The path to the .dat file containing the input data.
+        """
+
+        try:
+            with open(dat_file, "r") as f:
+                imported_data = f.read()
+        except Exception as e:
+            raise RuntimeError(f"Failed to import data from {dat_file}: {e}")
+        
+        try:
+            new_inputs = self._split_data(imported_data)
+        except Exception as e:
+            raise RuntimeError(f"Failed to process imported data from {dat_file}: {e}")
+        
+        self._clear()
+        for input_code, value in new_inputs.items():
+            self.set_values(code=input_code, values=value, group="0")
+
+    def get_groups(self, sort: bool = True) -> list[str]:
+        """
+        Returns a list of unique groups in the input data.
+        
+        Args:
+            sort (bool): If True, the groups will be sorted in ascending order. Default is True.
+        Returns:
+            list[str]: A list of unique groups in the input data.
+        """
+        groups = set(self._data["group"])
+
+        #sort the groups in ascending order if requested
+        if sort:
+            groups = sorted(groups, key=lambda x: int(x))
+        return list(groups)
+
+    def group_size(self, group: str) -> int:
+        """
+        Returns the number of values for a given group.
+        
+        Args:
+            group (str): The group for which to retrieve the number of values.
+        Returns:
+            int: The number of values for the given group.
+        """
+        size = 0
+        input_codes = self.get_input_codes(group)
+        for code in input_codes:
+            size = max(size, len(self.get_values(code)))
+        return size
+
+    def number_of_runs(self) -> int:
+        """
+        Returns the total number of runs based on the number of values for each group.
+        The total number of runs is the cartesian product of each group.
+
+        Returns:
+            int: The total number of runs.
+        """
+        runs = 1
+        for group in self.get_groups():
+            runs *= self.group_size(group)
+        return runs
+    
+    def get_runs_as_dicts(self) -> dict[int, dict[str, str]]:
+            """
+            Generates row 
+            """
+            groups = self.get_groups(sort=True)
+            if not groups:
+                return {}
+
+            group_to_position = {group: idx for idx, group in enumerate(groups)}
+            group_sizes = [self.group_size(group) for group in groups]
+            number_of_runs = self.number_of_runs()
+
+            transposed_runs: dict[int, dict[str, str]] = {}
+
+            for run_index in range(number_of_runs):
+                per_group_indices = []
+                remainder = run_index
+                for size in reversed(group_sizes):
+                    per_group_indices.append(remainder % size)
+                    remainder //= size
+                per_group_indices.reverse()
+
+                run_dict = {}
+                for row in self.parent.input_sequence:
+                    for input in row:
+                        code = input.code
+                        if code == "UM":
+                            run_dict[code] = str(run_index)
+                            continue
+
+                        group = self.get_group(code)
+                        values = self.get_values(code)
+
+                        group_index = per_group_indices[group_to_position[group]]
+                        run_dict[code] = values[group_index % len(values)]
+
+                transposed_runs[run_index] = run_dict
+
+            return transposed_runs
+
+    def _clear(self):
+        """
+        Clears the input data.
+        """
+        self._input_data = {
+            "group": [],
+            "code": [],
+            "value": []
+        }
+        self._groups = dict()
+        self._values = dict()
+
+class InputData():
+    def __init__(self):
+        self._input_data = {
+            "group": [],
+            "code": [],
+            "value": []
+        }
+        # A dictionary to store the group of each input code
+        self._groups = dict()
+
+        # A dictionary to store the values of each input code
+        self._values = dict()
 
     def __str__ (self):
         """
@@ -153,48 +350,6 @@ class InputData():
             runs *= self.group_size(group)
         return runs
 
-    def import_data(self, csv_file: Path):
-        """
-        Imports input data from a CSV file.
-
-        Args:
-            csv_file (Path): The path to the CSV file containing the input data.
-        """
-        self._clear()
-        with open(csv_file, "r") as f:
-            lines = f.readlines()
-        for line in lines[1:]:
-            group, code, value = line.strip().split(",")
-            self._data["group"].append(group)
-            self._data["code"].append(code)
-            self._data["value"].append(value)
-            self._groups[code] = group
-            if code not in self._values:
-                self._values[code] = []
-            self._values[code].append(value)
-
-    def import_data_from_dat(self, dat_file: Path):
-        """
-        Imports input data from a .dat file.
-
-        Args:
-            dat_file (Path): The path to the .dat file containing the input data.
-        """
-
-        try:
-            with open(dat_file, "r") as f:
-                imported_data = f.read()
-        except Exception as e:
-            raise RuntimeError(f"Failed to import data from {dat_file}: {e}")
-        
-        try:
-            new_inputs = self._split_data(imported_data)
-        except Exception as e:
-            raise RuntimeError(f"Failed to process imported data from {dat_file}: {e}")
-        
-        self._clear()
-        for input_code, value in new_inputs.items():
-            self.set_values(code=input_code, values=value, group="0")
 
     def _split_data(self, data: str) -> dict:
         split_data = {}
@@ -793,116 +948,3 @@ class OutputData():
         if index is None:
             raise KeyError(f"Output code '{code}' not found in result mapping.")
         return [vals[index - 1] for vals in self._data.values()]  # Adjust for 0-based indexing
-
-
-class Data():
-    def __init__(self, parent: Executable):
-        self.parent = parent
-
-        self.input = InputData(parent)
-        self.output = OutputData(parent)
-
-        self.predictor_variables = set()
-        self.response_variables = set()
-
-        self.results = None
-
-    def append_results(self, new_results: dict):
-        """
-        Appends new results to the existing results.
-
-        Args:
-            new_results (dict): A dictionary containing new results to append.
-        """
-        if self.results is None:
-            self.results = new_results
-        else:
-            for key, value in new_results.items():
-                if key in self.results:
-                    self.results[key].extend(value)
-                else:
-                    self.results[key] = value
-
-    def get_values(self, code: str):
-        #look for code in the parent inputs and results and return where to find it
-        if self.is_input(code):
-            return self.input.get_input_values()[code]
-        elif code in self.parent.result_mapping:
-            return self.output.get_values(code)
-        else:
-            raise KeyError(f"Code '{code}' not found in input or output mappings.")
-
-    def is_input(self, code: str) -> bool:
-        """
-        Checks if a given code is an input code.
-
-        Args:
-            code (str): The code to check.
-        """
-        for row in self.parent.input_sequence:
-            if code in [input.code for input in row]:
-                return True
-        return False
-    
-    def set_predictor_variables(self, variables: list[str]):
-        """
-        Sets the predictor variables for the data.
-
-        Args:
-            variables (list[str]): A list of predictor variable names.
-        """
-        self.predictor_variables = set(variables)
-
-    def set_response_variables(self, variables: list[str]):
-        """
-        Sets the response variables for the data.
-
-        Args:
-            variables (list[str]): A list of response variable names.
-        """
-        self.response_variables = set(variables)
-
-    
-if __name__ == "__main__":
-    from models.aevap import AEVAP
-    aevap = AEVAP()
-    data = Data(aevap)
-    # data.input.import_data_from_dat(Path("d1.dat"))
-    # data.input.change_group(code = "CFM", new_group = "1")
-    # #data.input.add_value(code = "CFM", value = "1000")
-    # #data.input.change_group(code = "TAE", new_group = "2")
-    # # data.input.set_values(code = "TAE", values = list(map(str, range(81,96,1))), group = "2")
-    # data.input.set_values(code = "CFM", values = list(map(str, range(3000, 6000, 1000))), group = "1")
-    # # data.input.set_values(code = "TWB", values = list(map(str, range(60, 80, 1))), group = "3")
-    # print(data.input.__repr__())
-
-
-    
-    # index = data.input.number_of_runs()//2 + 6767
-    # print(data.input.get_input(index))
-    # print(3*(index))
-
-    # aevap.data.input.set_input_file_name("test.dat")
-    # aevap.run()
-    # data.output._load_data()
-
-    #print(data.output._data)
-
-    # data.set_predictor_variables(["CFM"])
-    # data.set_response_variables(["QT"])
-
-    # x = data.get_values("CFM")
-    # y = data.get_values("QT")
-
-    # for i in range(len(x)):
-    #     print(x[i] + "," + y[i])
-    import tkinter as tk
-    from tkinterdnd2 import DND_FILES, TkinterDnD
-    
-    root = TkinterDnD.Tk()
-    root.title("Input Data Widget")
-    widget = data.input.get_widget()
-    widget.pack(fill="both", expand=True)
-    widget.text
-    root.mainloop()
-    

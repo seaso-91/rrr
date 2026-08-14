@@ -3,7 +3,7 @@ from src.controllers.string_inputs_controller import InputText
 
 def test_all():
     from src.models.aevap import AEVAP
-    from src.models.rr_data import InputData
+    from src.controllers.data_controller import InputData
     aevap = AEVAP()
     input_data = aevap.data.input
 

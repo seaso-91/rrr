@@ -29,9 +29,9 @@ class ParseError(Exception):
     def message(self):
         return self._message
 
-from src.models.rr_data import InputData
+from src.controllers.data_controller import DataController
 class StringInput():
-    def __init__(self, data: InputData):
+    def __init__(self, data: DataController):
         self._data = data
         self._executable = data.parent
         self._text = ""

@@ -15,8 +15,8 @@ class Executable():
         self.input_sequence = input_sequence
         self.result_mapping = result_mapping
         self.required_dats = required_dats
-        from src.models.rr_data import Data
-        self.data = Data(parent=self)
+        # from src.controllers.data_controller import Data
+        # self.data = Data(parent=self)
 
     def _initialize_inputs(self, input_sequence: list[list[Input]]):
         self.inputs = {}
