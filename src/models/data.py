@@ -122,7 +122,7 @@ class InputData(Data):
             data[row]["UM"] += f"RRR{row}"
             data[row]["run_status"] = InputStatus.READY.value
         self._run_data = data
-        self._set_next_rand_id()
+        self._set_next_rand_index()
 
     def get(self, number_of_runs: int = None) -> dict[int, dict[str, str]]:
         runs = list(self._run_data.values())
@@ -132,7 +132,7 @@ class InputData(Data):
         while number_of_runs > len(self._run_data):
             run_id = list(self._run_data.keys())[self._next_index]
             runs[run_id] = self._run_data.pop(run_id)
-            self._set_next_rand_id()
+            self._set_next_rand_index()
             number_of_runs -= 1
         return runs
 
@@ -144,7 +144,7 @@ class InputData(Data):
             if run_id in self._run_data:
                 raise ValueError(f"Run ID {run_id} already exists in the data.")
             self._run_data[run_id] = run
-            self._set_next_rand_id()
+            self._set_next_rand_index()
 
     def _set_next_rand_index(self):
         self._next_index = randint(0, len(self._run_data) - 1)
