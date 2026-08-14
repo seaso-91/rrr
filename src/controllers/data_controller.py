@@ -232,8 +232,6 @@ class DataController(BaseController):
             """
             Generates row 
             """
-            print(f"Generating runs as dicts for {self.number_of_runs()} runs.")
-            print(self._input_data)
             groups = self.get_groups(sort=True)
             if not groups:
                 return {}
@@ -846,7 +844,6 @@ class InputData():
         if isinstance(data, InputData):
             self._set_data_from_inputdata(data, force=force)
         if isinstance(data, Path):
-            print(f"Setting data from file: {data}")
             if data.suffix.lower() == ".csv":
                 self._set_data_from_csv(data, force=force)
             if data.suffix.lower() == ".dat":
