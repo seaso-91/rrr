@@ -439,11 +439,11 @@ class _State():
         return self.__class__.__name__
     
     def enter(self):
-        if self.parent._char == "\n":
-            char = "newline"
-        else:
-            char = self.parent._char
-        print(f"{self.__class__.__name__} for {self.parent.input.code}: Position: {self.parent.iter_position}, char='{char}', stack='{self.parent._stack}', values={self.parent._values}, group='{self.parent._group}'")
+        # if self.parent._char == "\n":
+        #     char = "newline"
+        # else:
+        #     char = self.parent._char
+        # print(f"{self.__class__.__name__} for {self.parent.input.code}: Position: {self.parent.iter_position}, char='{char}', stack='{self.parent._stack}', values={self.parent._values}, group='{self.parent._group}'")
         pass
 
     def exit(self):
