@@ -3,6 +3,8 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 import shutil
 import random
+from src.models.data import InputStatus, OutputData, InputData
+from src.controllers.controller import BaseController
 import src.models.rr as rr
 from src.models.rr_enums import Dat, Program
 import copy
@@ -65,53 +67,112 @@ from src.models.aevap import AEVAP
 #     # )
 # }
 
-class Manager():
-    def __init__(self):
-        self.executable_list = ExecutableList()
+from enum import Enum
+
+class ExeController(BaseController):
+    def __init__(self, executable: rr.Executable, input_data: InputData, output_data: OutputData):
+        super().__init__()
+        self.executable = executable
+        self.input_data = input_data
+        self.output_data = output_data
         self.directory = Path.cwd()
-        self.spooled_programs_path = self.directory / "programs"
-        self.source_programs_path = self.directory / "KCC"
-        self._findExistingExecutables()
+        self.executable_list = ExecutableList(executable.program, self.directory / "programs", self.directory / "KCC")
+    
+    def run(self, max_workers=1):
+        while self.data_controller.not_finished:
+            number_of_runs = self.data_controller.number_of_runs()
+            executables = self.executable_list.get(number_of_runs)
+            for executable in executables:
+                executable.data = self.input_data.get(number_of_runs=number_of_runs/len(executables))
 
-    def run(self, executable: rr.Executable, max_workers=None):
-        while len(self.executable_list.getExecutables(executable.program)) < max_workers:
-            self.spoolUp(executable)
-        executables = self.executable_list.getExecutables(executable.program)
-        self.split_input(from_exe=executable, to_exe=executables)
-        with ProcessPoolExecutor(max_workers=max_workers) as pool:
-            return list(pool.map(self._run_job, self.executable_list.getExecutables(executable.program)))
+            self.batch_run(executables=executables)
+
+            for executable in executables:
+                ##FIXME: not finished yet
+                
+                self.executable_list.check_in(executable)
+                
+
+    def batch_run(self, executables: list[rr.Executable]):
+        with ProcessPoolExecutor(max_workers=len(executables)) as pool:
+            return list(pool.map(self._run_job, executables))
         
-    def spoolUp(self, executable: rr.Executable) -> rr.Executable:
-        new_id = self._getNewID()
-        new_path = self.spooled_programs_path / str(new_id)
-        Path(new_path).mkdir(parents=True, exist_ok=True)
+    @staticmethod
+    def _run_job(executable: rr.Executable) -> rr.Executable:
+        executable.run()
+        return executable
 
-        dats_to_copy = executable.required_dats
+class ExecutableStatus(Enum):
+    READY = "Ready"
+    BUSY = "Busy"
 
-        #copy the executable and the dat files to the specified path
-        shutil.copy(self.source_programs_path / executable.program.exe, new_path)
-        factory = executable.program.cls
-        new_executable = factory()
-        for file_name in dats_to_copy:
-            shutil.copy(self.source_programs_path / file_name.dat, new_path)
-        new_executable.setPath(new_path)
-        self.executable_list.addExecutable(new_executable)
-        return new_executable
+class ExecutableList():
+    #the list is a dictionary of lists of RR.Executable
+    #the key is the name of the executable and the value is a list of that Executable
+    def __init__(self, program: Program, spooled_programs_path: Path, source_programs_path: Path):
+        self.program = program
+        self.executables: dict[str, dict[str, object]] = {}
+        self.spooled_programs_path = spooled_programs_path
+        self.source_programs_path = source_programs_path
+
+    def addExecutable(self, executable: rr.Executable) -> None:
+        if executable.program != self.program:
+            raise ValueError(f"Executable {executable.program.name} does not match list program {self.program.name}.")
+        #check if the executable is already in the list
+        if executable.path.name in self.executables.keys():
+            raise ValueError(f"Executable {executable} already exists in list.")
+        else:
+            self.executables[executable.path.name] = {"status": ExecutableStatus.READY, "executable": executable}
+
+    def get(self, number_of_executables) -> list[rr.Executable]:
+        result_list = []
+        while number_of_executables > self.number_of_ready_executables:
+            self.spool_up()
+        while number_of_executables < self.number_of_ready_executables:
+            self._kill(self.pop())
+        while number_of_executables > 0:
+            result_list.append(self.check_out())
+            number_of_executables -= 1
+        return result_list
+
+    def check_out(self) -> rr.Executable:
+        for key in self.executables.keys():
+            if self.executables[key]["status"] == ExecutableStatus.READY:
+                self.executables[key]["status"] = ExecutableStatus.BUSY
+                return self.executables[key]["executable"]
+        raise ValueError("No ready executables available.")
+
+    def check_in(self, executables: list[rr.Executable]|rr.Executable) -> None:
+        if isinstance(executables, list):
+            executables = [executables]
+        for executable in executables:
+            if executable.path.name in self.executables:
+                if self.executables[executable.path.name]["executable"] == executable:
+                    self.executables[executable.path.name]["status"] = ExecutableStatus.READY
+                else:
+                    raise ValueError(f"Executable {executable} not found in list.")
+            else:
+                raise ValueError(f"Executable {executable} not found in list.")
+
+    def pop(self) -> rr.Executable:
+        #pop the first item in the dictionary
+        for key in self.executables.keys():
+            if self.executables[key]["status"] == ExecutableStatus.READY:
+                result = self.executables.pop(key)
+                return result["executable"]
+    
+    @property
+    def number_of_ready_executables(self) -> int:
+        return len([exe for exe in self.executables.values() if exe["status"] == ExecutableStatus.READY])
 
     def _kill(self, executable: rr.Executable) -> bool:
         #delete the directory and all its contents
         path = executable.path
         if path.exists() and path.is_dir():
             shutil.rmtree(path)
-            self.executable_list.removeExecutable(executable)
+            self.removeExecutable(executable)
             return True
         return False
-
-
-    @staticmethod
-    def _run_job(executable: rr.Executable) -> rr.Executable:
-        executable.run()
-        return executable
 
     def _getNewID(self) -> str:
         #create a random number and check if it exists in the directory, if it does, create a new one until it doesn't exist
@@ -128,78 +189,35 @@ class Manager():
                 if len(exe_files) == 1:
                     name = Path(exe_files[0]).name[:-4]
                     print(f"Found existing executable: {name} in {path}")
-                    executable = self._newExecutable(Program[name])
+                    executable = self._new_executable()
                     executable.setPath(path)
                     self.executable_list.addExecutable(executable)
                     
-    def _newExecutable(self, program: Program) -> rr.Executable:
+    def _new_executable(self) -> rr.Executable:
         try:
-            print(f"Creating new executable: {program.name}")
-            executable_class = program.cls
+            print(f"Creating new executable: {self.program.name}")
+            executable_class = self.program.cls
             executable = executable_class()
             return executable
         except Exception as e:
-            raise ValueError(f"Executable {program.name} not found: {e}")
+            raise ValueError(f"Executable {self.program.name} not found: {e}")
         
-    def _readInput(self, input_file: Path) -> tuple[int, list[str]]:
-        with open(input_file, "r") as f:
-            lines = f.readlines()
-        run_indices = [i for i, line in enumerate(lines) if line.strip() == "0"]
-        return len(run_indices), lines
+    def spool_up(self):
+        executable = self._new_executable()
+        new_id = self._getNewID()
+        new_path = self.spooled_programs_path / str(new_id)
+        Path(new_path).mkdir(parents=True, exist_ok=True)
 
-    def split_input(self, from_exe: rr.Executable, to_exe: list[rr.Executable]|rr.Executable) -> None:
-        if not isinstance(to_exe, list):
-            to_exe = [to_exe]
+        dats_to_copy = executable.required_dats
 
-        number_of_splits = len(to_exe)
-        for split, executable in enumerate(to_exe, start=0):
-            executable.data.input.set_data(from_exe.data.input, force=True)
-            executable.data.input.set_split(number_of_splits, split)
-            executable.data.input.write_input_file()
-
-    def _readInput(self, input_file: Path) -> tuple[int, list[str]]:
-        with open(input_file, "r") as f:
-            lines = f.readlines()
-        run_indices = [i for i, line in enumerate(lines) if line.strip() == "0"]
-        return len(run_indices), lines
-    
-class ExecutableList():
-    #the list is a dictionary of lists of RR.Executable
-    #the key is the name of the executable and the value is a list of that Executable
-    def __init__(self):
-        self.executables = {}
-
-    def addExecutable(self, executable: rr.Executable) -> None:
-        if executable.program.name not in self.executables:
-            self.executables[executable.program.name] = []
-        #check if the executable is already in the list
-        if executable in self.executables[executable.program.name]:
-            raise ValueError(f"Executable {executable} already exists in list.")
-        else:
-            self.executables[executable.program.name].append(executable)
-
-    def removeExecutable(self, executable: rr.Executable) -> None:
-        if executable.program.name in self.executables:
-            if executable in self.executables[executable.program.name]:
-                self.executables[executable.program.name].remove(executable)
-                if len(self.executables[executable.program.name]) == 0:
-                    del self.executables[executable.program.name]
-            else:
-                raise ValueError(f"Executable {executable} not found in list.")
-        else:
-            raise ValueError(f"Executable {executable} not found in list.")
-
-    def getExecutables(self, program: Program) -> list[rr.Executable]:
-        if program.name in self.executables:
-            return self.executables[program.name]
-        else:
-            return []
-    
-    def __iter__(self):
-        for name in self.executables.keys():
-            for executable in self.executables[name]:
-                yield executable
-
+        #copy the executable and the dat files to the specified path
+        shutil.copy(self.source_programs_path / executable.program.exe, new_path)
+        factory = executable.program.cls
+        new_executable = factory()
+        for file_name in dats_to_copy:
+            shutil.copy(self.source_programs_path / file_name.dat, new_path)
+        new_executable.setPath(new_path)
+        self.add_executable(new_executable)
 
 
 if __name__ == "__main__":
