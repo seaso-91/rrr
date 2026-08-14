@@ -42,7 +42,8 @@ class Data():
 class OutputData(Data):
     def __init__(self):
         super().__init__()
-
+        self._results: dict[int, dict[str, str]] = {}
+        
     @property
     def successes(self):
         return {k: v for k, v in self._run_data.items() if v["run_status"] == InputStatus.FINISHED.value}
@@ -51,12 +52,26 @@ class OutputData(Data):
     def failures(self):
         return {k: v for k, v in self._run_data.items() if v["run_status"] == InputStatus.ERROR.value}  
 
-    def push_failure(self, data: dict[str, str]):
+    def push(self, input_data: dict[int, dict[str, str]], output_data: list[dict[str, str]]|dict[str, str]):
+        if isinstance(output_data, dict):
+            output_data = [output_data]
+
+        for data in output_data:
+            run_id = self.get_run_id(data)
+            if run_id not in input_data.keys():
+                raise ValueError(f"Run ID {run_id} not found in the provided input data")
+            self._push_success(input_data.pop(run_id))
+            self._results[run_id] = data
+
+        for run_id, data in input_data.items():
+            self._push_failure(data)
+
+    def _push_failure(self, data: dict[str, str]):
         data["run_status"] = InputStatus.ERROR.value
         run_id = self.get_run_id(data)
         self._run_data[run_id] = data
 
-    def push_success(self, data: dict[str, str]):
+    def _push_success(self, data: dict[str, str]):
         data["run_status"] = InputStatus.FINISHED.value
         run_id = self.get_run_id(data)
         self._run_data[run_id] = data
