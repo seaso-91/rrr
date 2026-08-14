@@ -116,7 +116,6 @@ class InputData(Data):
 
     @Data.run_data.setter
     def run_data(self, data: dict[int, dict[str, str]]):
-        print(f"setting_data := {data}")
         self._failures = {}
         self._successes = {}
         for row in data:
