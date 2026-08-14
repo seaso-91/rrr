@@ -147,4 +147,7 @@ class InputData(Data):
             self._set_next_rand_index()
 
     def _set_next_rand_index(self):
-        self._next_index = randint(0, len(self._run_data) - 1)
+        try:
+            self._next_index = randint(0, len(self._run_data) - 1)
+        except ValueError:
+            self._next_index = 0
