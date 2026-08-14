@@ -79,18 +79,18 @@ class ExeController(BaseController):
         self.executable_list = ExecutableList(executable.program, self.directory / "programs", self.directory / "KCC")
     
     def run(self, max_workers=1):
-        while self.data_controller.not_finished:
-            number_of_runs = self.data_controller.number_of_runs()
+        while self.input_data.number_of_runs > 0:
+            number_of_runs = self.input_data.number_of_runs
             executables = self.executable_list.get(number_of_runs)
             for executable in executables:
-                executable.data = self.input_data.get(number_of_runs=number_of_runs/len(executables))
+                executable.data = self.input_data.get(number_of_runs=number_of_runs // len(executables) + 1)
 
             self.batch_run(executables=executables)
 
-            for executable in executables:
-                ##FIXME: not finished yet
-                
-                self.executable_list.check_in(executable)
+        for executable in executables:
+            ##FIXME: not finished yet
+            
+            self.executable_list.check_in(executable)
                 
 
     def batch_run(self, executables: list[rr.Executable]):

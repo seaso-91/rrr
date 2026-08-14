@@ -8,11 +8,15 @@ class InputStatus(Enum):
 
 class Data():
     def __init__(self):
-        self._input_data: dict[int, dict[str, str]] = {}
+        self._run_data: dict[int, dict[str, str]] = {}
 
     @property
-    def _input_data(self):
-        return self._input_data
+    def number_of_runs(self) -> int:
+        return len(self._run_data)
+
+    @property
+    def run_data(self):
+        return self._run_data
     
     @staticmethod
     def get_run_id(run_data: dict[str, str]) -> int:
@@ -41,21 +45,21 @@ class OutputData(Data):
 
     @property
     def successes(self):
-        return {k: v for k, v in self._input_data.items() if v["run_status"] == InputStatus.FINISHED.value}
+        return {k: v for k, v in self._run_data.items() if v["run_status"] == InputStatus.FINISHED.value}
 
     @property
     def failures(self):
-        return {k: v for k, v in self._input_data.items() if v["run_status"] == InputStatus.ERROR.value}  
+        return {k: v for k, v in self._run_data.items() if v["run_status"] == InputStatus.ERROR.value}  
 
     def push_failure(self, data: dict[str, str]):
         data["run_status"] = InputStatus.ERROR.value
         run_id = self.get_run_id(data)
-        self._input_data[run_id] = data
+        self._run_data[run_id] = data
 
     def push_success(self, data: dict[str, str]):
         data["run_status"] = InputStatus.FINISHED.value
         run_id = self.get_run_id(data)
-        self._input_data[run_id] = data
+        self._run_data[run_id] = data
 
 class InputData(Data):
     def __init__(self):
@@ -69,17 +73,17 @@ class InputData(Data):
         for row in data:
             data[row]["UM"] += f"RRR{row}"
             data[row]["run_status"] = InputStatus.READY.value
-        self._input_data = data
+        self._run_data = data
         self._set_next_rand_id()
 
     def get(self, number_of_runs: int = None) -> list[dict[str, str]]:
-        runs = list(self._input_data.values())
+        runs = list(self._run_data.values())
         if number_of_runs is None:
             return runs
         runs = []
-        while number_of_runs > len(self._input_data):
-            run_id = list(self._input_data.keys())[self._next_id]
-            runs.append(self._input_data.pop(run_id))
+        while number_of_runs > len(self._run_data):
+            run_id = list(self._run_data.keys())[self._next_id]
+            runs.append(self._run_data.pop(run_id))
             self._set_next_rand_id()
             number_of_runs -= 1
         return runs
@@ -89,10 +93,10 @@ class InputData(Data):
             run_data = [run_data]
         for run in run_data:
             run_id = self.get_run_id(run)
-            if run_id in self._input_data:
+            if run_id in self._run_data:
                 raise ValueError(f"Run ID {run_id} already exists in the data.")
-            self._input_data[run_id] = run
+            self._run_data[run_id] = run
             self._set_next_rand_id()
 
     def _set_next_rand_id(self):
-        self._next_id = randint(0, len(self._input_data) - 1)
+        self._next_id = randint(0, len(self._run_data) - 1)
