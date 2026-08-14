@@ -49,9 +49,9 @@ class DataController(BaseController):
                 
         # add new values
         for value in values:
-            self._data["group"].append(group)
-            self._data["code"].append(code)
-            self._data["value"].append(value)
+            self._input_data["group"].append(group)
+            self._input_data["code"].append(code)
+            self._input_data["value"].append(value)
 
         self._groups[code] = group
         self._values[code] = values
@@ -106,6 +106,21 @@ class DataController(BaseController):
         string_input.validate()
         string_input.set_values()
         
+    def validate_group(self, group: str) -> bool:
+        """
+        Validates a group identifier. Only non-negative integers are allowed as group names.
+        Args:
+            group (str): The group identifier to validate.
+        Returns:
+            bool: True if the group identifier is valid, False otherwise.
+        """
+        # only allow non negative integers as group names
+        result = False
+        if group.isdigit():
+            result = int(group) >= 0
+        if result is False:
+            raise ValueError(f"Invalid group '{group}'")
+        return result
 
     def get_groups(self, sort: bool = True) -> list[str]:
         """
@@ -587,21 +602,7 @@ class InputData():
         # validate the value using the input's validate method
         return self.parent.inputs[code].validate(value)
 
-    def validate_group(self, group: str) -> bool:
-        """
-        Validates a group identifier. Only non-negative integers are allowed as group names.
-        Args:
-            group (str): The group identifier to validate.
-        Returns:
-            bool: True if the group identifier is valid, False otherwise.
-        """
-        # only allow non negative integers as group names
-        result = False
-        if group.isdigit():
-            result = int(group) >= 0
-        if result is False:
-            raise ValueError(f"Invalid group '{group}'")
-        return result
+
 
     def get_code(self, row: int, column: int) -> str:
         """
