@@ -70,11 +70,12 @@ from src.models.aevap import AEVAP
 from enum import Enum
 
 class ExeController(BaseController):
-    def __init__(self, executable: executable.Executable, input_data: InputData, output_data: OutputData):
+    def __init__(self, executable: executable.Executable, input_data: InputData, output_data: OutputData, min_workers_on_hand: int = 10):
         super().__init__()
         self.executable = executable
         self.input_data = input_data
         self.output_data = output_data
+        self.min_workers_on_hand = min_workers_on_hand
         self.directory = Path.cwd()
         self.executable_list = ExecutableList(executable.program, self.directory / "programs", self.directory / "KCC")
     
@@ -133,7 +134,7 @@ class ExecutableList():
         result_list = []
         while number_of_executables > self.number_of_ready_executables:
             self.spool_up()
-        while number_of_executables < self.number_of_ready_executables:
+        while number_of_executables < self.number_of_ready_executables and self.number_of_ready_executables > self.min_workers_on_hand:
             self._kill(self.pop())
         while number_of_executables > 0:
             result_list.append(self.check_out())
