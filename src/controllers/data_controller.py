@@ -113,7 +113,6 @@ class DataController(BaseController):
         Args:
             dat_file (Path): The path to the .dat file containing the input data.
         """
-
         #open the dat file and read the lines
         with open(dat_file, "r") as f:
             string = f.read()
@@ -121,7 +120,10 @@ class DataController(BaseController):
         from src.models.string_input import StringInput
         string_input = StringInput(self)
         string_input.text = string
-        string_input.validate()
+        try:
+            string_input.validate()
+        except Exception as e:
+            raise ValueError(f"Invalid input data in {dat_file}: {e}")
         string_input.set_values()
         
     def validate_group(self, group: str) -> bool:
@@ -950,3 +952,10 @@ class OutputData():
         if index is None:
             raise KeyError(f"Output code '{code}' not found in result mapping.")
         return [vals[index - 1] for vals in self._data.values()]  # Adjust for 0-based indexing
+
+
+if __name__ == "__main__":
+    from src.models.aevap import AEVAP
+    aevap = AEVAP()
+    data_controller = DataController(aevap)
+    data_controller.import_dat("C:\\Users\\jajones\\Desktop\\rrr\\D1.DAT")
