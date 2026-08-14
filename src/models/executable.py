@@ -15,6 +15,7 @@ class Executable():
         self.input_sequence = input_sequence
         self.result_mapping = result_mapping
         self.required_dats = required_dats
+        self.input_file = InputFile(parent=self)
         self.output_file = OutputFile(parent=self)
         from src.models.data import InputData, OutputData
         self.input_data: InputData = InputData()
@@ -39,7 +40,7 @@ class Executable():
         self.input_file.write()
 
     def run(self):
-        self.write()
+        self.input_file.write()
         self.execute()
         self.output_data.push(self.input_data, self.output_file.load())
 
