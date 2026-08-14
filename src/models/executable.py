@@ -38,7 +38,6 @@ class Executable():
 
     
     def write(self):
-        print(f"Writing input file for {self.program} at {self.path}")
         self.input_file.write()
 
     def run(self):
@@ -76,7 +75,6 @@ class InputFile():
         return input_string[:-1]  # remove last newline
 
     def write(self) -> bool:
-        print(self.parent.input_data.number_of_runs)
         if self.parent.input_data.number_of_runs > 0:
             print(f"getting input string")
             input_string = self.get_input_string()
@@ -99,8 +97,10 @@ class InputFile():
 class OutputFile():
     def __init__(self, parent: Executable):
         self.parent = parent
-        self.results : list[dict[str, str]] = []
-        self.name = self.parent.path / f"{self.parent.program}.csv"
+
+    @property
+    def name(self):
+        return self.parent.path / f"{self.parent.program.name}.csv"
     
     #the results are a csv file with the first row being the column headers and the remaining rows being the data.
     def load(self):
@@ -113,7 +113,7 @@ class OutputFile():
                 values = line.strip().split(",")
                 for key, column in self.parent.result_mapping.items():
                     results[-1][key] = values[column]
-            self.results = results
+            return results
 
         except Exception as e:
             print(f"Error loading output file: {e}")
