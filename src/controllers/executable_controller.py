@@ -75,20 +75,24 @@ class ExeController(BaseController):
         self.executable = executable
         self.input_data = input_data
         self.output_data = output_data
-        self.min_workers_on_hand = min_workers_on_hand
         self.directory = Path.cwd()
-        self.executable_list = ExecutableList(executable.program, self.directory / "programs", self.directory / "KCC")
+        self.executable_list = ExecutableList(executable.program, self.directory / "programs", self.directory / "KCC", min_workers_on_hand=min_workers_on_hand)
     
     def run(self, max_workers=1):
+        print(self.input_data.run_data)
+        run_number = 0
         while self.input_data.number_of_runs > 0:
+            run_number += 1
+            print(f"Run {run_number}: {self.input_data.number_of_runs} runs remaining.")
             number_of_runs = self.input_data.number_of_runs
             if number_of_runs < max_workers:
                 max_workers = number_of_runs
             executables = self.executable_list.get(max_workers)
             for executable in executables:
                 executable.input_data.run_data = self.input_data.get(number_of_runs=number_of_runs // len(executables) + 1)
- 
-            self.batch_run(executables=executables)
+                executable.write()
+
+            executables = self.batch_run(executables=executables)
 
             for executable in executables:
                 self.input_data.return_run(executable.output_data.retry)
@@ -113,13 +117,15 @@ class ExecutableStatus(Enum):
     BUSY = "Busy"
 
 class ExecutableList():
-    #the list is a dictionary of lists of RR.Executable
-    #the key is the name of the executable and the value is a list of that Executable
-    def __init__(self, program: Program, spooled_programs_path: Path, source_programs_path: Path):
+    #the list is a dictionary with keys of the executable ids (paths)
+    #each key has a status and an associated executable object
+    def __init__(self, program: Program, spooled_programs_path: Path, source_programs_path: Path, min_workers_on_hand: int):
         self.program = program
         self.executables: dict[str, dict[str, object]] = {}
         self.spooled_programs_path = spooled_programs_path
         self.source_programs_path = source_programs_path
+        self.min_workers_on_hand = min_workers_on_hand
+        self._findExistingExecutables()
 
     def add(self, executable: Executable) -> None:
         if executable.program != self.program:
@@ -128,10 +134,12 @@ class ExecutableList():
         if executable.path.name in self.executables.keys():
             raise ValueError(f"Executable {executable} already exists in list.")
         else:
+            print(f"Adding executable {executable} to list.")
             self.executables[executable.path.name] = {"status": ExecutableStatus.READY, "executable": executable}
 
     def get(self, number_of_executables) -> list[Executable]:
         result_list = []
+        print(f"Getting {number_of_executables} executables. Currently have {self.number_of_ready_executables} ready.")
         while number_of_executables > self.number_of_ready_executables:
             self.spool_up()
         while number_of_executables < self.number_of_ready_executables and self.number_of_ready_executables > self.min_workers_on_hand:
@@ -169,8 +177,11 @@ class ExecutableList():
     
     @property
     def number_of_ready_executables(self) -> int:
-        return len([exe for exe in self.executables.values() if exe["status"] == ExecutableStatus.READY])
-
+        return len(
+            [exe for exe in self.executables.values()
+            if exe["status"] == ExecutableStatus.READY]
+        )
+    
     def _kill(self, executable: Executable) -> bool:
         #delete the directory and all its contents
         path = executable.path
@@ -199,8 +210,6 @@ class ExecutableList():
             if path.is_dir() and path.name.isdigit() and len(path.name) == 5:
                 exe_files = list(path.glob("*.exe"))
                 if len(exe_files) == 1:
-                    name = Path(exe_files[0]).name[:-4]
-                    print(f"Found existing executable: {name} in {path}")
                     executable = self._new_executable()
                     executable.path = path
                     self.add(executable)
@@ -243,10 +252,12 @@ if __name__ == "__main__":
     data_controller = DataController(aevap)
 
     data_controller.import_dat(Path("C:\\Users\\jajones\\Desktop\\rrr\\D1.DAT"))
-    print(f"imported data: \n{data_controller._input_data}")
+    
     data_controller.set_values("TAE", list(map(str, range(80, 90, 1))), "1")
     input_data = data_controller.get_runs_as_dicts()
+    print(f"Length of input data: {len(input_data)}")
     aevap.input_data.run_data = input_data
+    print(f"Length of input data after setting: {len(aevap.input_data.run_data)}")
 
     manager.run(max_workers=2)
 

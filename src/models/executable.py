@@ -38,10 +38,10 @@ class Executable():
 
     
     def write(self):
+        print(f"Writing input file for {self.program} at {self.path}")
         self.input_file.write()
 
     def run(self):
-        self.input_file.write()
         self.execute()
         self.output_data.push(self.input_data, self.output_file.load())
 
@@ -64,18 +64,22 @@ class InputFile():
         input_string = ""
         for run_id in self.parent.input_data.run_data:
             run_data = self.parent.input_data.run_data[run_id]
-            for input in self.input_sequence:
-                for key in input:
-                    if key in run_data:
-                        input_string += f"{run_data[key]},"
+            for inputs in self.parent.input_sequence:
+                for input in inputs:
+                    if input.code in run_data:
+                        input_string += f"{run_data[input.code]},"
                     else:
-                        raise KeyError(f"Input key '{key}' not found.")
+                        print(f"Run data for run_id {run_id} does not contain key '{input.code}'. Available keys: {list(run_data.keys())}")
+                        raise KeyError(f"Input key '{input.code}' not found.")
                 input_string = input_string[:-1] + "\n"  # remove last comma and add newline
         return input_string + "0"
 
     def write(self) -> bool:
+        print(self.parent.input_data.number_of_runs)
         if self.parent.input_data.number_of_runs > 0:
+            print(f"getting input string")
             input_string = self.get_input_string()
+            print(input_string)
             try:
                 with open(self.parent.path / self._name, "w") as f:
                     f.write(input_string)

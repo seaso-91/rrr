@@ -11,6 +11,7 @@ class Module(Enum):
     STRING_INPUTS_CONTROLLER = "src.controllers.string_inputs_controller"
     INPUTS_CONTROLLER = "src.controllers.inputs_controller"
     TESTING = "tests.testing"
+    DATA_CONTROLLER = "src.controllers.data_controller"
 
 if __name__ == "__main__":
 

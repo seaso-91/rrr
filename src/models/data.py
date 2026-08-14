@@ -116,6 +116,7 @@ class InputData(Data):
 
     @Data.run_data.setter
     def run_data(self, data: dict[int, dict[str, str]]):
+        print(f"setting_data := {data}")
         self._failures = {}
         self._successes = {}
         for row in data:
@@ -125,11 +126,12 @@ class InputData(Data):
         self._set_next_rand_index()
 
     def get(self, number_of_runs: int = None) -> dict[int, dict[str, str]]:
-        runs = list(self._run_data.values())
-        if number_of_runs is None:
+        if number_of_runs is None or number_of_runs >= len(self._run_data):
+            runs = self._run_data
+            self._run_data = {}
             return runs
         runs = {}
-        while number_of_runs > len(self._run_data):
+        while number_of_runs > 0:
             run_id = list(self._run_data.keys())[self._next_index]
             runs[run_id] = self._run_data.pop(run_id)
             self._set_next_rand_index()
