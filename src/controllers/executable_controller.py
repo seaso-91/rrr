@@ -1,14 +1,14 @@
+from src.models.data import OutputData, InputData
+from src.controllers.controller import BaseController
+from src.models.executable import Executable
+from src.models.rr_enums import Program
 
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 import shutil
 import random
-from src.models.data import InputStatus, OutputData, InputData
-from src.controllers.controller import BaseController
-import src.models.executable as executable
-from src.models.rr_enums import Dat, Program
-import copy
-from src.models.aevap import AEVAP
+
+
 ##FIXME move dats to each module
 # PROGRAM_INFO = {
 #     # Program.ACOND: (RR.ACOND(),[Dat.COIL, Dat.COIL1, Dat.REF]),
@@ -70,7 +70,7 @@ from src.models.aevap import AEVAP
 from enum import Enum
 
 class ExeController(BaseController):
-    def __init__(self, executable: executable.Executable, input_data: InputData, output_data: OutputData, min_workers_on_hand: int = 10):
+    def __init__(self, executable: Executable, input_data: InputData, output_data: OutputData, min_workers_on_hand: int = 10):
         super().__init__()
         self.executable = executable
         self.input_data = input_data
@@ -99,12 +99,12 @@ class ExeController(BaseController):
             self.executable_list.check_in(executable)
                 
 
-    def batch_run(self, executables: list[executable.Executable]):
+    def batch_run(self, executables: list[Executable]):
         with ProcessPoolExecutor(max_workers=len(executables)) as pool:
             return list(pool.map(self._run_job, executables))
         
     @staticmethod
-    def _run_job(executable: executable.Executable) -> executable.Executable:
+    def _run_job(executable: Executable) -> Executable:
         executable.run()
         return executable
 
@@ -121,7 +121,7 @@ class ExecutableList():
         self.spooled_programs_path = spooled_programs_path
         self.source_programs_path = source_programs_path
 
-    def addExecutable(self, executable: executable.Executable) -> None:
+    def add(self, executable: Executable) -> None:
         if executable.program != self.program:
             raise ValueError(f"Executable {executable.program.name} does not match list program {self.program.name}.")
         #check if the executable is already in the list
@@ -130,7 +130,7 @@ class ExecutableList():
         else:
             self.executables[executable.path.name] = {"status": ExecutableStatus.READY, "executable": executable}
 
-    def get(self, number_of_executables) -> list[executable.Executable]:
+    def get(self, number_of_executables) -> list[Executable]:
         result_list = []
         while number_of_executables > self.number_of_ready_executables:
             self.spool_up()
@@ -141,14 +141,14 @@ class ExecutableList():
             number_of_executables -= 1
         return result_list
 
-    def check_out(self) -> executable.Executable:
+    def check_out(self) -> Executable:
         for key in self.executables.keys():
             if self.executables[key]["status"] == ExecutableStatus.READY:
                 self.executables[key]["status"] = ExecutableStatus.BUSY
                 return self.executables[key]["executable"]
         raise ValueError("No ready executables available.")
 
-    def check_in(self, executables: list[executable.Executable]|executable.Executable) -> None:
+    def check_in(self, executables: list[Executable]|Executable) -> None:
         if isinstance(executables, list):
             executables = [executables]
         for executable in executables:
@@ -160,7 +160,7 @@ class ExecutableList():
             else:
                 raise ValueError(f"Executable {executable} not found in list.")
 
-    def pop(self) -> executable.Executable:
+    def pop(self) -> Executable:
         #pop the first item in the dictionary
         for key in self.executables.keys():
             if self.executables[key]["status"] == ExecutableStatus.READY:
@@ -171,7 +171,7 @@ class ExecutableList():
     def number_of_ready_executables(self) -> int:
         return len([exe for exe in self.executables.values() if exe["status"] == ExecutableStatus.READY])
 
-    def _kill(self, executable: executable.Executable) -> bool:
+    def _kill(self, executable: Executable) -> bool:
         #delete the directory and all its contents
         path = executable.path
         if path.exists() and path.is_dir():
@@ -196,10 +196,10 @@ class ExecutableList():
                     name = Path(exe_files[0]).name[:-4]
                     print(f"Found existing executable: {name} in {path}")
                     executable = self._new_executable()
-                    executable.setPath(path)
-                    self.executable_list.addExecutable(executable)
+                    executable.path = path
+                    self.executable_list.add(executable)
                     
-    def _new_executable(self) -> executable.Executable:
+    def _new_executable(self) -> Executable:
         try:
             print(f"Creating new executable: {self.program.name}")
             executable_class = self.program.cls
@@ -222,57 +222,27 @@ class ExecutableList():
         new_executable = factory()
         for file_name in dats_to_copy:
             shutil.copy(self.source_programs_path / file_name.dat, new_path)
-        new_executable.setPath(new_path)
-        self.add_executable(new_executable)
+        new_executable.path = new_path
+        self.add(new_executable)
 
 
 if __name__ == "__main__":
-    from time import time
     from src.models.aevap import AEVAP
-    from pathlib import Path
+    from src.controllers.data_controller import DataController
+    from time import time
 
-    run_information = {
-        "number_of_runs": 0,
-        "duration": 0,
-        "number_of_workers": 0,
-    }
-
-    log = []
-
-    manager = Manager()
     aevap = AEVAP()
-    aevap.setPath(Path.cwd())
-    aevap.data.input.set_input_file_name("deleteme.dat")
-    aevap.data.input.import_data_from_dat("d1.dat")
+    input_data = InputData()
+    output_data = OutputData()
+    manager = ExeController(executable=aevap, input_data=input_data, output_data=output_data)
 
-    aevap.inputs["TAE"].setValue(81)
-    number_of_trials = 1
-    
-    for max_workers in range(20,26,2):
-        for max_TAE in range(82, 89, 3):
-            for max_TWB in range(80, 81, 3):
-                for max_CFM in range(6000, 6100, 100):
-                    TAE_values = list(map(str, range(80, max_TAE, 1)))
-                    TWB_values = list(map(str, range(70, max_TWB, 1)))
-                    CFM_values = list(map(str, range(4000, max_CFM, 100)))
-                    aevap.data.input.set_values("TAE", TAE_values, "1")
-                    aevap.data.input.set_values("TWB", TWB_values, "2")
-                    aevap.data.input.set_values("CFM", CFM_values, "3")
-                    run_information["number_of_runs"] = aevap.data.input.number_of_runs()
-                    run_information["number_of_workers"] = max_workers
-                    total_time = 0
-                    for trial in range(number_of_trials):
-                        start_time = time()
-                        results = manager.run(aevap, max_workers=max_workers)
-                        total_time += time() - start_time
+    data_controller = DataController(aevap)
 
-                    run_information["duration"] = total_time / number_of_trials
-                    log.append(run_information.copy())
-                    print_string = f"Number of runs: {run_information['number_of_runs']}, Duration: {run_information['duration']:.2f} seconds, Number of workers: {run_information['number_of_workers']} \n"
-                    print(print_string)
-                    #append to output file
-                    with open("output.txt", "a") as f:
-                        f.write(print_string)
+    data_controller.import_dat(Path("C:\\Users\\jajones\\Desktop\\rrr\\D1.DAT"))
+    data_controller.set_values("TAE", list(map(str, range(80, 90, 1))), "1")
 
-    for entry in log:
-        print(f"Number of runs: {entry['number_of_runs']}, Duration: {entry['duration']:.2f} seconds, Number of workers: {entry['number_of_workers']}")
+    manager.run(max_workers=2)
+
+    print(f"Successes: {len(output_data.successes)}")
+    print(f"Failures: {len(output_data.failures)}")
+   

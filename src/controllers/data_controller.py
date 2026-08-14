@@ -96,20 +96,16 @@ class DataController(BaseController):
             dat_file (Path): The path to the .dat file containing the input data.
         """
 
-        try:
-            with open(dat_file, "r") as f:
-                imported_data = f.read()
-        except Exception as e:
-            raise RuntimeError(f"Failed to import data from {dat_file}: {e}")
+        #open the dat file and read the lines
+        with open(dat_file, "r") as f:
+            string = f.read()
+
+        from src.models.string_input import StringInput
+        string_input = StringInput(self)
+        string_input.text = string
+        string_input.validate()
+        string_input.set_values()
         
-        try:
-            new_inputs = self._split_data(imported_data)
-        except Exception as e:
-            raise RuntimeError(f"Failed to process imported data from {dat_file}: {e}")
-        
-        self._clear()
-        for input_code, value in new_inputs.items():
-            self.set_values(code=input_code, values=value, group="0")
 
     def get_groups(self, sort: bool = True) -> list[str]:
         """
