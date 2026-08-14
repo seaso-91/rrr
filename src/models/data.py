@@ -52,10 +52,20 @@ class OutputData(Data):
     def failures(self):
         return {k: v for k, v in self._run_data.items() if v["run_status"] == InputStatus.ERROR.value}  
 
+    @property
+    def retry(self):
+        return {k: v for k, v in self._run_data.items() if v["run_status"] == InputStatus.READY.value}
+
     def push(self, input_data: dict[int, dict[str, str]], output_data: list[dict[str, str]]|dict[str, str]):
         if isinstance(output_data, dict):
             output_data = [output_data]
 
+        if len(input_data) == len(output_data):
+            for run_id, data in input_data.items():
+                self._push_success(data)
+                self._results[run_id] = output_data[run_id]
+
+        # push successes for all output_data
         for data in output_data:
             run_id = self.get_run_id(data)
             if run_id not in input_data.keys():
@@ -63,8 +73,19 @@ class OutputData(Data):
             self._push_success(input_data.pop(run_id))
             self._results[run_id] = data
 
-        for run_id, data in input_data.items():
-            self._push_failure(data)
+        # push failure for just the next run_id
+        if len(input_data) > 0:
+            self._push_failure(input_data.pop(next(iter(input_data))))
+
+        # retry the remaining runs
+        if len(input_data) > 0:
+            for run_id, data in input_data.items():
+                self._push_retry(data)
+
+    def _push_retry(self, data: dict[str, str]):
+        data["run_status"] = InputStatus.READY.value
+        run_id = self.get_run_id(data)
+        self._run_data[run_id] = data
 
     def _push_failure(self, data: dict[str, str]):
         data["run_status"] = InputStatus.ERROR.value
