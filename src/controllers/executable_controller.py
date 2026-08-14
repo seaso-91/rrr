@@ -86,7 +86,7 @@ class ExeController(BaseController):
             number_of_runs = self.input_data.number_of_runs
             executables = self.executable_list.get(number_of_runs)
             for executable in executables:
-                executable.data = self.input_data.get(number_of_runs=number_of_runs // len(executables) + 1)
+                executable.input_data.run_data = self.input_data.get(number_of_runs=number_of_runs // len(executables) + 1)
  
             self.batch_run(executables=executables)
 

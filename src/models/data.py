@@ -112,7 +112,7 @@ class OutputData(Data):
 class InputData(Data):
     def __init__(self):
         super().__init__()
-        self._next_id = 0
+        self._next_index = 0
 
     @Data.run_data.setter
     def run_data(self, data: dict[int, dict[str, str]]):
@@ -124,14 +124,14 @@ class InputData(Data):
         self._run_data = data
         self._set_next_rand_id()
 
-    def get(self, number_of_runs: int = None) -> list[dict[str, str]]:
+    def get(self, number_of_runs: int = None) -> dict[int, dict[str, str]]:
         runs = list(self._run_data.values())
         if number_of_runs is None:
             return runs
-        runs = []
+        runs = {}
         while number_of_runs > len(self._run_data):
-            run_id = list(self._run_data.keys())[self._next_id]
-            runs.append(self._run_data.pop(run_id))
+            run_id = list(self._run_data.keys())[self._next_index]
+            runs[run_id] = self._run_data.pop(run_id)
             self._set_next_rand_id()
             number_of_runs -= 1
         return runs
@@ -146,5 +146,5 @@ class InputData(Data):
             self._run_data[run_id] = run
             self._set_next_rand_id()
 
-    def _set_next_rand_id(self):
-        self._next_id = randint(0, len(self._run_data) - 1)
+    def _set_next_rand_index(self):
+        self._next_index = randint(0, len(self._run_data) - 1)
