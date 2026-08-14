@@ -35,6 +35,19 @@ class Executable():
     @path.setter
     def path(self, path: Path):
         self._path = path
+
+    @property
+    def inputs(self) -> list[Input]:
+        inputs = []
+        for line in self.input_sequence:
+            for input in line:
+                inputs.append(input)
+        return inputs
+
+    def get_input(self, code: str) -> Input:
+        for input in self.inputs:
+            if input.code == code:
+                return input
     
     def write(self):
         self.input_file.write()
