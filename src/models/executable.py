@@ -72,7 +72,8 @@ class InputFile():
                         print(f"Run data for run_id {run_id} does not contain key '{input.code}'. Available keys: {list(run_data.keys())}")
                         raise KeyError(f"Input key '{input.code}' not found.")
                 input_string = input_string[:-1] + "\n"  # remove last comma and add newline
-        return input_string + "0"
+            input_string += "0\n"  # add the terminating zero for each run
+        return input_string[:-1]  # remove last newline
 
     def write(self) -> bool:
         print(self.parent.input_data.number_of_runs)
