@@ -76,9 +76,7 @@ class InputFile():
 
     def write(self) -> bool:
         if self.parent.input_data.number_of_runs > 0:
-            print(f"getting input string")
             input_string = self.get_input_string()
-            print(input_string)
             try:
                 with open(self.parent.path / self._name, "w") as f:
                     f.write(input_string)
