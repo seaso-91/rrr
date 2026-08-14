@@ -56,6 +56,19 @@ class DataController(BaseController):
         self._groups[code] = group
         self._values[code] = values
 
+    def get_values(self, code: str) -> list[str]:
+        """
+        Returns the list of values for a given input code.
+        
+        Args:
+            code (str): The input code for which to retrieve values.
+        Returns:
+            list[str]: A list of values for the given input code.
+        """
+        if code not in self._values.keys():
+            raise KeyError(f"Input code '{code}' not found in input data. a")
+        return self._values[code]
+
     def validate_value(self, code: str, value: str) -> bool:
         """
         Validates a value for a given input code using the input's validate method.
@@ -142,6 +155,20 @@ class DataController(BaseController):
             raise ValueError(f"Invalid group '{group}'")
         return result
 
+    def get_group(self, code: str) -> str:
+        """
+        Returns the group for a given input code.
+        
+        Args:
+            code (str): The input code for which to retrieve the group.
+        Returns:
+            str: The group for the given input code.
+        """
+
+        if code not in self._groups.keys():
+            raise KeyError(f"Input code '{code}' not found in input data. b")
+        return self._groups[code]
+
     def get_groups(self, sort: bool = True) -> list[str]:
         """
         Returns a list of unique groups in the input data.
@@ -151,12 +178,27 @@ class DataController(BaseController):
         Returns:
             list[str]: A list of unique groups in the input data.
         """
-        groups = set(self._data["group"])
+        groups = set(self._input_data["group"])
 
         #sort the groups in ascending order if requested
         if sort:
             groups = sorted(groups, key=lambda x: int(x))
         return list(groups)
+
+    def get_input_codes(self, group: str) -> list[str]:
+        """
+        Returns the list of input codes for a given group.
+        
+        Args:
+            group (str): The group for which to retrieve inputs.
+        Returns:
+            list[str]: A list of unique inputs in the input data for the given group.
+        """
+        input_codes = []
+        for key in self._groups.keys():
+            if self._groups[key] == group:
+                input_codes.append(key)
+        return input_codes
 
     def group_size(self, group: str) -> int:
         """
@@ -190,6 +232,8 @@ class DataController(BaseController):
             """
             Generates row 
             """
+            print(f"Generating runs as dicts for {self.number_of_runs()} runs.")
+            print(self._input_data)
             groups = self.get_groups(sort=True)
             if not groups:
                 return {}
@@ -309,49 +353,11 @@ class InputData():
             groups = sorted(groups, key=lambda x: int(x))
         return list(groups)
 
-    def get_group(self, code: str) -> str:
-        """
-        Returns the group for a given input code.
-        
-        Args:
-            code (str): The input code for which to retrieve the group.
-        Returns:
-            str: The group for the given input code.
-        """
 
-        if code not in self._groups.keys():
-            print(f"parent: {self.parent.path.name}")
-            print(f"_groups: {self._groups}")
-            raise KeyError(f"Input code '{code}' not found in input data. b")
-        return self._groups[code]
     
-    def get_input_codes(self, group: str) -> list[str]:
-        """
-        Returns the list of input codes for a given group.
-        
-        Args:
-            group (str): The group for which to retrieve inputs.
-        Returns:
-            list[str]: A list of unique inputs in the input data for the given group.
-        """
-        input_codes = []
-        for key in self._groups.keys():
-            if self._groups[key] == group:
-                input_codes.append(key)
-        return input_codes
 
-    def get_values(self, code: str) -> list[str]:
-        """
-        Returns the list of values for a given input code.
-        
-        Args:
-            code (str): The input code for which to retrieve values.
-        Returns:
-            list[str]: A list of values for the given input code.
-        """
-        if code not in self._values.keys():
-            raise KeyError(f"Input code '{code}' not found in input data. a")
-        return self._values[code]
+
+
 
     def group_size(self, group: str) -> int:
         """
