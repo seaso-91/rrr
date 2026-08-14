@@ -47,7 +47,7 @@ class Executable():
 
     def execute(self):
         try:
-            result = subprocess.run([self.path / self.program.exe, self.data.input.input_file.name], capture_output=True, text=True, cwd=self.path)
+            result = subprocess.run([self.path / self.program.exe, self.input_file.name], capture_output=True, text=True, cwd=self.path)
             if result.stderr:
                 print("AEVAP Error: ", result.stderr)
 
