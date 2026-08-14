@@ -80,6 +80,8 @@ class ExeController(BaseController):
     
     def run(self, max_workers=1):
         while self.input_data.number_of_runs > 0:
+            if self.input_data.number_of_runs < max_workers:
+                max_workers = self.input_data.number_of_runs
             number_of_runs = self.input_data.number_of_runs
             executables = self.executable_list.get(number_of_runs)
             for executable in executables:
@@ -88,7 +90,10 @@ class ExeController(BaseController):
             self.batch_run(executables=executables)
 
         for executable in executables:
-            ##FIXME: not finished yet
+            self.input_data.return_run(executable.output_data.retry)
+            self.output_data.add_input_data(executable.output_data.successes)
+            self.output_data.add_input_data(executable.output_data.failures)
+            self.output_data.add_results(executable.output_data.results)
             
             self.executable_list.check_in(executable)
                 

@@ -43,7 +43,19 @@ class OutputData(Data):
     def __init__(self):
         super().__init__()
         self._results: dict[int, dict[str, str]] = {}
-        
+
+    @property
+    def results(self):
+        return self._results
+
+    def add_input_data(self, input_data: dict[int, dict[str, str]]):
+        for run_id, data in input_data.items():
+            self._run_data[run_id] = data
+
+    def add_results(self, results: dict[int, dict[str, str]]):
+        for run_id, result in results.items():
+            self._results[run_id] = result
+
     @property
     def successes(self):
         return {k: v for k, v in self._run_data.items() if v["run_status"] == InputStatus.FINISHED.value}
