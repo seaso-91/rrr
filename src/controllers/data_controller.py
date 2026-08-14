@@ -65,11 +65,12 @@ class DataController(BaseController):
         Returns:
             bool: True if the value is valid for the given input code, False otherwise.
         """
+        input = self.parent.get_input(code)
         # validate the input exists
-        if code not in self.parent.inputs:
-            raise ValueError(f"Input '{code}' does not exist")
+        if input is None:
+            raise KeyError(f"Input code '{code}' not found in executable.")
         # validate the value using the input's validate method
-        return self.parent.inputs[code].validate(value)
+        return input.validate(value)
 
     def export_data(self, csv_file: Path):
         """
