@@ -94,7 +94,7 @@ class OutputFile():
     def __init__(self, parent: Executable):
         self.parent = parent
         self.results : list[dict[str, str]] = []
-        self.name = self.parent.path / f"{self.parent.name}.csv"
+        self.name = self.parent.path / f"{self.parent.program}.csv"
     
     #the results are a csv file with the first row being the column headers and the remaining rows being the data.
     def load(self):
