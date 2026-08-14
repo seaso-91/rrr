@@ -176,20 +176,26 @@ class ExecutableList():
         path = executable.path
         if path.exists() and path.is_dir():
             shutil.rmtree(path)
-            self.removeExecutable(executable)
+            self.remove(executable)
             return True
         return False
+
+    def remove(self, executable: Executable) -> None:
+        if executable.path.name in self.executables:
+            del self.executables[executable.path.name]
+        else:
+            raise ValueError(f"Executable {executable} not found in list.")
 
     def _getNewID(self) -> str:
         #create a random number and check if it exists in the directory, if it does, create a new one until it doesn't exist
         while True:
             new_id = str(random.randint(10000, 99999))
-            if not (self.directory / new_id).exists():
+            if not (self.spooled_programs_path / new_id).exists():
                 return new_id
 
     def _findExistingExecutables(self):
         #check subfolders. they must be a 5 digit number and contain a single .exe file
-        for path in self.directory.iterdir():
+        for path in self.spooled_programs_path.iterdir():
             if path.is_dir() and path.name.isdigit() and len(path.name) == 5:
                 exe_files = list(path.glob("*.exe"))
                 if len(exe_files) == 1:
@@ -197,7 +203,7 @@ class ExecutableList():
                     print(f"Found existing executable: {name} in {path}")
                     executable = self._new_executable()
                     executable.path = path
-                    self.executable_list.add(executable)
+                    self.add(executable)
                     
     def _new_executable(self) -> Executable:
         try:
@@ -232,17 +238,18 @@ if __name__ == "__main__":
     from time import time
 
     aevap = AEVAP()
-    input_data = InputData()
-    output_data = OutputData()
-    manager = ExeController(executable=aevap, input_data=input_data, output_data=output_data)
+    manager = ExeController(executable=aevap, input_data=aevap.input_data, output_data=aevap.output_data)
 
     data_controller = DataController(aevap)
 
     data_controller.import_dat(Path("C:\\Users\\jajones\\Desktop\\rrr\\D1.DAT"))
+    print(f"imported data: \n{data_controller._input_data}")
     data_controller.set_values("TAE", list(map(str, range(80, 90, 1))), "1")
+    input_data = data_controller.get_runs_as_dicts()
+    aevap.input_data.run_data = input_data
 
     manager.run(max_workers=2)
 
-    print(f"Successes: {len(output_data.successes)}")
-    print(f"Failures: {len(output_data.failures)}")
+    # print(f"Successes: {len(aevap.output_data.successes)}")
+    # print(f"Failures: {len(aevap.output_data.failures)}")
    
