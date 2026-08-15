@@ -3,6 +3,7 @@ from src.models.rr_enums import Program
 import subprocess
 from itertools import product
 from src.models.input import Input
+from tools.decorators import timer_decorator as timer
 
 class Executable():
     def __init__(self, program: Program,  
@@ -20,6 +21,7 @@ class Executable():
         from src.models.data import InputData, OutputData
         self.input_data: InputData = InputData()
         self.output_data: OutputData = OutputData()
+        self.result: subprocess.CompletedProcess = None
 
     def _initialize_inputs(self, input_sequence: list[list[Input]]):
         self.inputs = {}
@@ -42,16 +44,23 @@ class Executable():
 
     def run(self):
         self.execute()
-        self.output_data.push(self.input_data, self.output_file.load())
+        self.output_data.push(self.input_data.run_data, self.output_file.load(), self.result)
 
     def execute(self):
+        self.result = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
         try:
-            result = subprocess.run([self.path / self.program.exe, self.input_file.name], capture_output=True, text=True, cwd=self.path)
-            if result.stderr:
-                print("AEVAP Error: ", result.stderr)
-
+            self.result = subprocess.run(
+                [self.path / self.program.exe, self.input_file.name],
+                capture_output=True,
+                text=True, 
+                cwd=self.path,
+                check=True
+                )
         except Exception as e:
-            print(f"Error occurred while running AEVAP: {e}")
+            self.result.stderr = str(e)
+            
+
+
     
 
 class InputFile():
@@ -106,11 +115,13 @@ class OutputFile():
         try:
             with open(self.name, "r") as f:
                 lines = f.readlines()
+                if len(lines) < 2:
+                    return results
             for line in lines[1:]:
                 results.append({})
                 values = line.strip().split(",")
                 for key, column in self.parent.result_mapping.items():
-                    results[-1][key] = values[column]
+                    results[-1][key] = values[column-1].strip()
             return results
 
         except Exception as e:

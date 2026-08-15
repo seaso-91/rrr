@@ -68,6 +68,7 @@ import random
 # }
 
 from enum import Enum
+from tools.decorators import timer_decorator as timer
 
 class ExeController(BaseController):
     def __init__(self, executable: Executable, input_data: InputData, output_data: OutputData, min_workers_on_hand: int = 10):
@@ -79,7 +80,6 @@ class ExeController(BaseController):
         self.executable_list = ExecutableList(executable.program, self.directory / "programs", self.directory / "KCC", min_workers_on_hand=min_workers_on_hand)
     
     def run(self, max_workers=1):
-        print(self.input_data.run_data)
         run_number = 0
         while self.input_data.number_of_runs > 0:
             run_number += 1
@@ -88,10 +88,11 @@ class ExeController(BaseController):
             if number_of_runs < max_workers:
                 max_workers = number_of_runs
             executables = self.executable_list.get(max_workers)
-            for executable in executables:
-                executable.input_data.run_data = self.input_data.get(number_of_runs=number_of_runs // len(executables) + 1)
+            for executable in executables[:-1]:
+                executable.input_data.run_data = self.input_data.get(number_of_runs=number_of_runs // len(executables))
                 executable.write()
-
+            executables[-1].input_data.run_data = self.input_data.get(number_of_runs=number_of_runs // len(executables) + number_of_runs % len(executables))
+            executables[-1].write()
             executables = self.batch_run(executables=executables)
 
             for executable in executables:
@@ -139,7 +140,6 @@ class ExecutableList():
 
     def get(self, number_of_executables) -> list[Executable]:
         result_list = []
-        print(f"Getting {number_of_executables} executables. Currently have {self.number_of_ready_executables} ready.")
         while number_of_executables > self.number_of_ready_executables:
             self.spool_up()
         while number_of_executables < self.number_of_ready_executables and self.number_of_ready_executables > self.min_workers_on_hand:
@@ -157,16 +157,16 @@ class ExecutableList():
         raise ValueError("No ready executables available.")
 
     def check_in(self, executables: list[Executable]|Executable) -> None:
-        if isinstance(executables, list):
+        if isinstance(executables, Executable):
             executables = [executables]
         for executable in executables:
             if executable.path.name in self.executables:
-                if self.executables[executable.path.name]["executable"] == executable:
+                if self.executables[executable.path.name]["executable"].path.name == executable.path.name:
                     self.executables[executable.path.name]["status"] = ExecutableStatus.READY
                 else:
                     raise ValueError(f"Executable {executable} not found in list.")
             else:
-                raise ValueError(f"Executable {executable} not found in list.")
+                raise ValueError(f"Executable {executable} not found in list.2")
 
     def pop(self) -> Executable:
         #pop the first item in the dictionary
@@ -187,7 +187,6 @@ class ExecutableList():
         path = executable.path
         if path.exists() and path.is_dir():
             shutil.rmtree(path)
-            self.remove(executable)
             return True
         return False
 
@@ -195,7 +194,7 @@ class ExecutableList():
         if executable.path.name in self.executables:
             del self.executables[executable.path.name]
         else:
-            raise ValueError(f"Executable {executable} not found in list.")
+            raise ValueError(f"Executable {executable.path} not found in list.")
 
     def _getNewID(self) -> str:
         #create a random number and check if it exists in the directory, if it does, create a new one until it doesn't exist
@@ -216,7 +215,6 @@ class ExecutableList():
                     
     def _new_executable(self) -> Executable:
         try:
-            print(f"Creating new executable: {self.program.name}")
             executable_class = self.program.cls
             executable = executable_class()
             return executable
@@ -251,16 +249,30 @@ if __name__ == "__main__":
 
     data_controller = DataController(aevap)
 
-    data_controller.import_dat(Path("C:\\Users\\jajones\\Desktop\\rrr\\D1.DAT"))
+
+    for max_workers in [8]:#8, 16, 32, 61]:
+        data_controller.import_dat(Path("C:\\Users\\jajones\\Desktop\\rrr\\D1.DAT"))
+
+        
+        data_controller.set_values("TAE", list(map(str, (x for x in range(60, 90, 20)))), "2")
+        data_controller.set_values("TWB", list(map(str, (x for x in range(-50, -20, 20)))), "2")
+        data_controller.set_values("CFM", list(map(str, (x for x in range(3000, 6000, 1000)))), "1")
+        data_controller.set_values("IET", list(map(str, (x for x in range(1,60,5)))), "3")
+        data_controller.set_values("FET", list(map(str, (x for x in range(1,60,5)))), "3")
+        data_controller.set_values("FC", ["1", "2", "3", "4", "5", "6", "7", "8", "B"], "4", force=True)
+
+        input_data = data_controller.get_runs_as_dicts()
+
+        aevap.input_data.run_data = input_data
+
     
-    data_controller.set_values("TAE", list(map(str, range(80, 90, 1))), "1")
-    input_data = data_controller.get_runs_as_dicts()
-    print(f"Length of input data: {len(input_data)}")
-    aevap.input_data.run_data = input_data
-    print(f"Length of input data after setting: {len(aevap.input_data.run_data)}")
+        start_time = time()
+        manager.run(max_workers=max_workers)
+        end_time = time()
+        print(f"Run with {max_workers} workers took {end_time - start_time:.2f} seconds.")
+        print(f"Successes: {len(aevap.output_data.successes)}")
+        print(f"Failures: {len(aevap.output_data.failures)}")
 
-    manager.run(max_workers=2)
 
-    # print(f"Successes: {len(aevap.output_data.successes)}")
-    # print(f"Failures: {len(aevap.output_data.failures)}")
+
    
