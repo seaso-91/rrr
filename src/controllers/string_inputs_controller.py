@@ -167,14 +167,17 @@ class StringInputsController(BaseController):
 if __name__ == "__main__":
     from src.models.aevap import AEVAP
     from src.views.string_input_view import Widget as StringInputView
+    from src.controllers.data_controller import DataController
+
     from tkinterdnd2 import TkinterDnD
     root = TkinterDnD.Tk()
 
     aevap = AEVAP()
-    input_data = aevap.data.input
+
+    data_controller = DataController(aevap)
 
     from src.models.string_input import StringInput
-    model = StringInput(input_data)
+    model = StringInput(data_controller)
     view = StringInputView(root)
     view.pack(fill=tk.BOTH, expand=True)
 
