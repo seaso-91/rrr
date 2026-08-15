@@ -71,11 +71,11 @@ from enum import Enum
 from tools.decorators import timer_decorator as timer
 
 class ExeController(BaseController):
-    def __init__(self, executable: Executable, input_data: InputData, output_data: OutputData, min_workers_on_hand: int = 10):
+    def __init__(self, executable: Executable, min_workers_on_hand: int = 10):
         super().__init__()
         self.executable = executable
-        self.input_data = input_data
-        self.output_data = output_data
+        self.input_data = executable.input_data
+        self.output_data = executable.output_data
         self.directory = Path.cwd()
         self.executable_list = ExecutableList(executable.program, self.directory / "programs", self.directory / "KCC", min_workers_on_hand=min_workers_on_hand)
     
@@ -245,7 +245,7 @@ if __name__ == "__main__":
     from time import time
 
     aevap = AEVAP()
-    manager = ExeController(executable=aevap, input_data=aevap.input_data, output_data=aevap.output_data)
+    manager = ExeController(executable=aevap)
 
     data_controller = DataController(aevap)
 
@@ -259,11 +259,9 @@ if __name__ == "__main__":
         data_controller.set_values("CFM", list(map(str, (x for x in range(3000, 6000, 1000)))), "1")
         data_controller.set_values("IET", list(map(str, (x for x in range(1,60,5)))), "3")
         data_controller.set_values("FET", list(map(str, (x for x in range(1,60,5)))), "3")
-        data_controller.set_values("FC", ["1", "2", "3", "4", "5", "6", "7", "8", "B"], "4", force=True)
+        data_controller.set_values("FC", ["1", "2", "3", "4", "5", "6", "7", "8", ], "4", force=True)
 
-        input_data = data_controller.get_runs_as_dicts()
-
-        aevap.input_data.run_data = input_data
+        data_controller.flush()
 
     
         start_time = time()
@@ -273,6 +271,7 @@ if __name__ == "__main__":
         print(f"Successes: {len(aevap.output_data.successes)}")
         print(f"Failures: {len(aevap.output_data.failures)}")
 
+        data_controller.print_to_csv(filename=f"C:\\Users\\jajones\\Desktop\\rrr\\results_{max_workers}.csv", show_failures = True)
 
 
    
