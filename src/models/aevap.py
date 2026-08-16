@@ -171,113 +171,97 @@ class AEVAP(Executable):
 
 
 class TAE(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="TAE",
                          data_type=float,
                          description="Air Dry Bulb Temperature, F",
-                         value=value,
                          is_required=True)
 
-
 class TWB(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="TWB",
                          data_type=float,
                          description="Air Wet Bulb Temperature, F",
-                         value=value,
                          is_required=True)
 
 class LT(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="LT",
                          data_type=float,
                          description="Liquid Temperature, F, to expansion device",
-                         value=value,
                          is_required=True)
 
 class IET(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="IET",
                          data_type=float,
                          description="Initial Evaporating Temperature (not lower than -99F), F to 0.10",
-                         value=value,
                          min_value = -99.0,
                          is_required=True)
 
 class FET(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="FET",
                          data_type=float,
                          description="Final Evaporating Temperature F to 0.10",
-                         value=value,
                          min_value = 0.1,
                          is_required=True)
 
 class INC(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="INC",
                          data_type=float,
                          description="Increment between initial and final evaporating temperatures (not less than .1)",
-                         value=value,
                          min_value = 0.1,
                          is_required=True)
-
-    def getValue(self):
-        val = super().getValue()
-        if val is None:
-            val = 0.1
-        return max(val, 0.1)
     
 class FNO(InputClass):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="FNO",
                          data_type=int,
                          description="Fluid Number (see Page FDP1)",
-                         value=value,
                          options=[53, 100, 103],
                          is_required=True)
 
 class CR(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="CR",
                          data_type=float,
                          description="Circulating Rate; enter overfeed rate + 1.0 ",
-                         value=value,
                          min_value=0.0,
                          is_required = False)
 
 class FC(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="FC",
                          data_type=float,
                          description="Fin coating factor (See page WD1A)",
-                         value=value,
                          min_value=0.0,
                          max_value=0.01)
 
 class FCT(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="FCT",
                          data_type=float,
                          description="Fin Coating Thickness, mils x 10",
-                         value=value,
                          min_value=0.0)
 
 class P(Input):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="P",
                          data_type=float,
                          description=" Altitude in Feet Above Sea Level, thus 5000FT, or Pressure in PSIG, thus 100P",
-                         value=value)
+                         )
     
-    def setValue(self, value):
+    def _validate(self, value):
+        if not super()._validate(value):
+            return False
         if isinstance(value, str):
             if value[-2:] == "FT":
                 try:
                     altitude = float(value[:-2])
                     if altitude < 0:
                         raise ValueError("Altitude cannot be negative")
-                    super().setValue(value)
                 except ValueError:
                     raise ValueError("Invalid altitude value")
             elif value[-1:] == "P":
@@ -290,152 +274,134 @@ class P(Input):
                     raise ValueError("Invalid pressure value")
             else:
                 raise ValueError("P must end with either 'FT' or 'P'")
-        
-        super().setValue(value)
+        return True
 
 class N(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="N",
                          data_type=int,
                          description="Coil code",
-                         value=value,
                          min_value=1,
                          is_required=True)
 
 class QTY(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="QTY",
                          data_type=int,
                          description="Quantity of coils piped in parallel air and fluid flow",
-                         value=value,
                          min_value=1)
         
 class FPI(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="FPI",
                          data_type=float,
                          description="Fins per inch",
-                         value=value,
                          min_value=1.0,
                          max_value=16.0)
 
 class ROWS(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="ROWS",
                          data_type=float,
                          description="Number of Rows, each coil (accepts partial rows to second decimal)",
-                         value=value,
                          min_value=0.0)
 
 class FH(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="FH",
                          data_type=float,
                          description="Fin Height in inches",
-                         value=value,
                          min_value=0.0)
 
 class FL(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="FL",
                          data_type=float,
                          description="Fin Length in inches",
-                         value=value,
                          min_value=0.0)
 
 class CFM(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="CFM",
                          data_type=float,
                          description="Airflow in Cubic Feet per Minute, total all coils",
-                         value=value,
                          min_value=0.0)
 
 class SA(InputClass):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="SA",
                          data_type=str,
                          description="Enter S for Standard airflow, or A for Actual airflow",
-                         value=value,
                          options=['S', 'A', None])
 
 class CKT(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="CKT",
                          data_type=int,
                          description="Number of circuits each coil",
-                         value=value,
                          min_value=1)
 
 class DL(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="DL",
                          data_type=float,
                          description="Length in inches of distributor lines, if no distributor enter 0",
-                         value=value,
                          min_value=0.0)
 
 class OD(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="OD",
                          data_type=float,
                          description="Distributor Line OD in inches",
-                         value=value,
                          min_value=0.0)
 
 class NZ(InputClass):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="NZ",
                          data_type=str,
                          description="Distributor Orifice Number, see documentation for details",
-                         value=value,
                          options=["0", ".5",  ".75",  "1",  "1.5", "1.75",  "2",  "2.5",  "3",  "3.5",  "4",  "4.5" , "5",  "6",  "8",  "10",  "12",  "15",  "17",  "20",  "25",  "30",  "35",  "40" , "50", '"V"'])
 
 class SPHT(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="SPHT",
                          data_type=float,
                          description="Superheat in degrees Fahrenheit",
-                         value=value,
                          min_value=0.0)
 
 class FLO(InputClass):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="FLO",
                          data_type=float,
                          description="Circuiting Arrangement (0 = Cross; 1 = Parallel; 2 = Parallel except superheat in entering air row; -1 = Counter)",
-                         value=value,
                          options=[0, 1, 2, -1])
 
 class FIN(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="FIN",
                          data_type=float,
                          description="Fin Thickness, mils*10",
-                         value=value,
                          min_value=0.0)
 
 class MTL(InputClass):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="MTL",
                          data_type=int,
                          description="Fin Material; 0 = Aluminum; 1 = Copper; 2 = Carbon Steel 3 = 90/10 Cupronickel; 4 = 302 Stainless Steel; 5 = bare tubes",
-                         value=value,
                          options=[0, 1, 2, 3, 4, 5])
 
 class T(Input):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="T",
                          data_type=str,
                          description="Tube treatement and wall thickness, see documentation for details",
-                         value=value)
+                         )
         
-    def setValue(self, value):
+    def _validate(self, value):
+        if not super()._validate(value):
+            return False
         # the first char must be either Z, F, Y, X, A, L, H, V, N, U, B, S, or I
         # the remaining chars must be a number with or without a decimal
-        if value is None:
-            super().setValue(value)
-            return
         if value[0] not in ['Z', 'F', 'Y', 'X', 'A', 'L', 'H', 'V', 'N', 'U', 'B', 'S', 'I']:
             raise ValueError("Invalid tube treatment (tube treatment and wall thickness)")
         try:
@@ -443,59 +409,53 @@ class T(Input):
                 raise ValueError("Wall thickness must be greater than or equal to 0 (tube treatment and wall thickness)")
         except ValueError:
             raise ValueError("Invalid wall thickness (tube treatment and wall thickness)")
-        super().setValue(value)
+        return True
 
 class GD(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="GD",
                          data_type=float,
                          description="Groove Depth in mils",
-                         value=value,
                          min_value=0.0)
 
 class A(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="A",
                          data_type=float,
                          description="Ridge apex angle in degrees",
-                         value=value,
                          min_value=0.0,
                          max_value=180.0)
 
 class NR(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="NR",
                          data_type=int,
                          description="Number of ridges",
-                         value=value,
                          min_value=0)
 
 class B(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="B",
                          data_type=float,
                          description="Lead helix angle in degrees",
-                         value=value,
                          min_value=0.0,
                          max_value=180.0)
 
 class HDR(Input):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="HDR",
                          data_type=str,
                          description="O.D. in 1/8th inches + coil adapter tube fabrication technique, see documentation for details",
-                         value=value)
+                        )
 
-    def setValue(self, value):
-        if value is None:
-            super().setValue(value)
-            return
+    def _validate(self, value):
+        if not super()._validate(value):
+            return False
         # the value can be 0, OR...
         # the last character must be either S or E
         # the first characters must be an integer
         if value == "0":
-            super().setValue(value)
-            return
+            return True
         if value[-1] not in ['S', 'E']:
             raise ValueError("Invalid tube treatment (HDR). Last character must be either S or E")
         try:
@@ -503,183 +463,169 @@ class HDR(Input):
                 raise ValueError("suction header OD must be greater than 0 (HDR)")
         except ValueError:
             raise ValueError("Invalid suction header OD (HDR)")
-        super().setValue(value)
+        return True
 
 class CON(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="CON",
                          data_type=int,
                          description="Connection O.D. in 1/8th inches",
-                         value=value,
                          min_value=0)
 
 class FW(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="FW",
                          data_type=float,
                          description="Fan watts if a fan/coil assembly, enter (-) watts if draw thru air flow, enter watts in blow thru, omit if coil only",
-                         value=value)
+                         )
 
 class RFW(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="RFW",
                          data_type=float,
                          description="Fan motor position/efficiency (enter 1 when fan motor not in airstream)",
-                         value=value,
                          min_value=0.0,
                          max_value=1.0)
 
 class UM(Input):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="UM",
                          data_type=str,
                          description="Unit Model, 25 characters maximum",
-                         value=value)
+                         )
 
-    def setValue(self, value):
-        if value is not None and len(value) > 25:
-            raise ValueError("Unit Model cannot exceed 25 characters")
-        super().setValue(value)
+    def _validate(self, value):
+        if not super()._validate(value):
+            return False
+        if value is not None and len(value) > 16:
+            raise ValueError("Unit Model cannot exceed 16 characters 9 characters are reserved backend purposes. We can increase the length by using a higher base serialization format, but this will require a change to the backend. Please contact support if you need a longer unit model name.")
+
 
 class QT(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="QT",
                          data_type=float,
                          description="Total Heat Transfer Rate, Btu/hr",
-                         value=value,
                          min_value=0.0)
 
 class QS(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="QS",
                          data_type=float,
                          description="Sensible Heat Transfer Rate, Btu/hr",
-                         value=value,
                          min_value=0.0)
 
 class DBL(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="DBL",
                          data_type=float,
                          description="Air Dry Bulb Temperature Leaving Coil, F",
-                         value=value)
+                         )
 
 class WG(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="WG",
                          data_type=float,
                          description="Pressure Drop of Air Across Coil, in. w.g.",
-                         value=value,
                          min_value=0.0)
 
 class COILPD(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="COILPD",
                          data_type=float,
                          description="Pressure Drop of Refrigerant Across Coil, psig",
-                         value=value,
                          min_value=0.0)
 
 class HDRPD(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="HDRPD",
                          data_type=float,
                          description="Pressure Drop of Refrigerant Across Header, psig",
-                         value=value,
                          min_value=0.0)
 
 class ORIFPD(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="ORIFPD",
                          data_type=float,
                          description="Pressure Drop of Refrigerant Across Distributor Orifice, psig",
-                         value=value,
                          min_value=0.0)
 
 class DISTPD(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="DISTPD",
                          data_type=float,
                          description="Pressure Drop of Refrigerant Across Distributor Line, psig",
-                         value=value,
                          min_value=0.0)
 
 class LBMIN(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="LB/MIN",
                          data_type=float,
                          description="Refrigerant Mass Flow Rate, lb/min",
-                         value=value,
                          min_value=0.0)
 
 class REFVEL(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="REFVEL",
                          data_type=float,
                          description="Refrigerant Velocity, ft/sec",
-                         value=value,
                          min_value=0.0)
 
 class CHRG(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="CHRG",
                          data_type=float,
                          description="Refrigerant Charge, lb",
-                         value=value,
                          min_value=0.0)
 
 class LBSFIN(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="LBS FIN",
                          data_type=float,
                          description="Fin Weight, lb",
-                         value=value,
                          min_value=0.0)
 
 class LBSTUB(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="LBS TUB",
                          data_type=float,
                          description="Tube Weight, lb",
-                         value=value,
                          min_value=0.0)
 
 class WBL(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="WBL",
                          data_type=float,
                          description="Wet Bulb Temperature Leaving Coil, F",
-                         value=value)
+                         )
 
 class LATENT(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="LATENT",
                          data_type=float,
                          description="Latent Heat Transfer Rate, Btu/hr",
-                         value=value,
                          min_value=0.0)
 
 class INTVOL(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="INT VOL",
                          data_type=float,
                          description="Internal Volume of Coil, in^3",
-                         value=value,
                          min_value=0.0)
 
 class TUBSVAP(Input):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="TUBSVAP",
                          data_type=float,
                          description="FIXME",
-                         value=value)
+                         )
 
 class DPL(InputRange):
-    def __init__(self, value = None):
+    def __init__(self):
         super().__init__(code="LEV DEW",
                          data_type=float,
                          description="Dew Point Temperature Leaving Coil, F",
-                         value=value)
+                         )
 
 
 
