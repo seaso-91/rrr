@@ -3,7 +3,7 @@ from src.views.string_input_view import Widget as StringInputView
 from src.controllers.controller import BaseController
 from src.models.input import Input, InputType
 from src.views.input_view import InputView, GroupFrame, InputWidget
-from src.models.rr_data import InputData
+from src.controllers.data_controller import DataController
 
 import tkinter as tk
 from pathlib import Path
@@ -101,7 +101,7 @@ class _Input():
         self.state.enter()
 
 class InputsController(BaseController):
-    def __init__(self, model: list[Input]|Input, view: InputView, input_data: InputData):
+    def __init__(self, model: list[Input]|Input, view: InputView, input_data: DataController):
         super().__init__()
         self.view = view
         if isinstance(model, Input):

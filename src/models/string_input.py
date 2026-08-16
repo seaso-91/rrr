@@ -1,5 +1,5 @@
 from enum import Enum, auto
-
+## FIXME the StringInput class has _input and input properties. they are mixed up and confusing
 
 class State(Enum):
     INITIALIZING = "_Initializing"
@@ -29,9 +29,9 @@ class ParseError(Exception):
     def message(self):
         return self._message
 
-from src.models.rr_data import InputData
+from src.controllers.data_controller import DataController
 class StringInput():
-    def __init__(self, data: InputData):
+    def __init__(self, data: DataController):
         self._data = data
         self._executable = data.parent
         self._text = ""
@@ -342,6 +342,10 @@ class _Input():
     def __init__(self, parent: StringInput):
         self.parent = parent
 
+    @property
+    def code(self):
+        return self.parent._input.code
+    
     @property
     def index(self):
         """
