@@ -21,9 +21,9 @@ class ASYS(Executable):
                               [],
                               [EVAP_N(), EVAP_FPI(), EVAP_ROWS(), EVAP_FH(), EVAP_FL(), EVAP_CFM(), EVAP_CKT1(), EVAP_CKT2(), EVAP_NT1(), EVAP_NT2(), EVAP_FLO(), EVAP_FIN(), EVAP_MTL(), EVAP_TW(), EVAP_TT(), EVAP_HDR(), EVAP_CON(), EVAP_SPHT(), EVAP_CF(), EVAP_EFW(), EVAP_TAE(), EVAP_TWB()],
                               [COND_N(), COND_FPI(), COND_ROWS(), COND_FH(), COND_FL(), COND_CFM(), COND_CKT1(), COND_CKT2(), COND_NT1(), COND_NT2(), COND_FLO(), COND_FIN(), COND_MTL(), COND_TW(), COND_TT(), COND_HDR(), COND_CON(), COND_SPHT(), COND_CF()]]
-        for input in self.input_sequence[4]:
+        for input in input_sequence[4]:
             input._code = "EVAP_" + input._code
-        for input in self.input_sequence[4]:
+        for input in input_sequence[5]:
             input._code = "COND_" + input._code
 
         result_mapping = {
