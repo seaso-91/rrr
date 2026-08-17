@@ -252,20 +252,29 @@ class _MultiStateSingle(_MultiState):
 
             
 if __name__ == "__main__":
+    from src.models.aevap import AEVAP
+    from src.models.acond import ACOND
+    from src.models.asys import ASYS_DX, ASYS_HP
+    from src.models.input import Input
+    from src.controllers.data_controller import DataController
+
     root = tk.Tk()
     root.title("Input View Test")
     input_view = InputView(root)
     input_view.pack(fill="both", expand=True)
 
     inputs = []
-    from src.models.aevap import AEVAP
     aevap = AEVAP()
-    for i, row in enumerate(aevap.input_sequence):
+    acond = ACOND()
+    asys_hp = ASYS_HP()
+    asys_dx = ASYS_DX()
+    for i, row in enumerate(asys_dx.input_sequence):
         for col, input in enumerate(row):
             input._category = f"Row {i+1}"
             inputs.append(input)
 
-    controller = InputsController(inputs, input_view, aevap.data.input)
+    data_controller = DataController(asys_dx)
+    controller = InputsController(inputs, input_view, data_controller)
 
     root.mainloop()
 
