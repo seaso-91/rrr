@@ -241,25 +241,33 @@ class ExecutableList():
 
 if __name__ == "__main__":
     from src.models.aevap import AEVAP
+    from src.models.acond import ACOND
+    from src.models.asys import ASYS_DX, ASYS_HP
     from src.controllers.data_controller import DataController
     from time import time
 
     aevap = AEVAP()
-    manager = ExeController(executable=aevap)
+    acond = ACOND()
+    asys_hp = ASYS_HP()
+    asys_dx = ASYS_DX()
 
-    data_controller = DataController(aevap)
+    executable = acond
+
+    manager = ExeController(executable=executable)
+
+    data_controller = DataController(executable)
 
 
     for max_workers in [8]:#8, 16, 32, 61]:
-        data_controller.import_dat(Path("C:\\Users\\jajones\\Desktop\\rrr\\D1.DAT"))
+        data_controller.import_dat(Path("C:\\Users\\jajones\\Desktop\\rrr\\KCC\\D1.DAT"))
 
         
-        data_controller.set_values("TAE", list(map(str, (x for x in range(60, 90, 20)))), "2")
-        data_controller.set_values("TWB", list(map(str, (x for x in range(-50, -20, 20)))), "2")
-        data_controller.set_values("CFM", list(map(str, (x for x in range(3000, 6000, 1000)))), "1")
-        data_controller.set_values("IET", list(map(str, (x for x in range(1,60,5)))), "3")
-        data_controller.set_values("FET", list(map(str, (x for x in range(1,60,5)))), "3")
-        data_controller.set_values("FC", ["1", "2", "3", "4", "5", "6", "7", "8", ], "4", force=True)
+        data_controller.set_values("TAE", list(map(str, (x for x in range(60, 91, 10)))), "2")
+        data_controller.set_values("TWB", list(map(str, (x for x in range(50, 81, 10)))), "2")
+        data_controller.set_values("CFM", list(map(str, (x for x in range(4000, 6000, 100)))), "1")
+        # data_controller.set_values("IET", list(map(str, (x for x in range(1,60,5)))), "3")
+        # data_controller.set_values("FET", list(map(str, (x for x in range(1,60,5)))), "3")
+        # data_controller.set_values("FC", ["4", "5", ], "4", force=True)
 
         data_controller.flush()
 
@@ -268,10 +276,10 @@ if __name__ == "__main__":
         manager.run(max_workers=max_workers)
         end_time = time()
         print(f"Run with {max_workers} workers took {end_time - start_time:.2f} seconds.")
-        print(f"Successes: {len(aevap.output_data.successes)}")
-        print(f"Failures: {len(aevap.output_data.failures)}")
+        print(f"Successes: {len(executable.output_data.successes)}")
+        print(f"Failures: {len(executable.output_data.failures)}")
 
-        data_controller.print_to_csv(filename=f"C:\\Users\\jajones\\Desktop\\rrr\\results_{max_workers}.csv", show_failures = True)
+        data_controller.print_to_csv(filename=f"C:\\Users\\jajones\\Desktop\\rrr\\results_{int(time())}.csv", show_failures = True)
 
 
    
