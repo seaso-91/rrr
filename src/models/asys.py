@@ -69,6 +69,7 @@ class C(InputClass):
             code="C",
             data_type=str,
             description="1 for cooling system; 0 for heat pump cooling; -1 for heat pump heating",
+            options=["-1", "0", "1"]
             )
         
 class TAE(InputRange):
@@ -270,11 +271,11 @@ class EFW(InputRange):
             description="Evaporator fan watts or indoor coil if heat pump, enter (-) watts if draw thru air flow, enter watts in blow thru, multi-split enter totals all zones"
         )
 
-class K(InputClass):
+class K(Input):
     def __init__(self):
         super().__init__(
             code="K",
-            data_type=float,
+            data_type=str,
             description=" System configuration code (See Page SK for schedule)"
         )
 
