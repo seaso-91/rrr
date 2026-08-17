@@ -15,9 +15,9 @@ class ASYS(Executable):
 
         required_dats = [Dat.COIL, Dat.COIL1, Dat.COMP, Dat.COMPL, Dat.REF, Dat.REVALV]
 
-        input_sequence = [[C(), TAE(), TWB(), EDB(), EWB(), FIRSTSUB(), LASTSUB(), INC(), ASC(), CD(), DSUP(), LS(), P(), SUBROWS(), RHROWS()],
+        input_sequence = [[C(), TAE(), TWB(), EDB(), EWB(), ISO(), FIRSTSUB(), LASTSUB(), INC(), ASC(), CD(), DSUP(), LS(), P(), SUBROWS(), RHROWS()],
                               [NP(), NL(), NE(), NC()],
-                              [CNO(), EP(), CFW(), EFW(), K(), MC(), DC(), NM(), ME(), W(), OZ(), UM(), M()],
+                              [CNO(), EP(), CFW(), EFW(), K(), MC(), MW(), DC(), NM(), ME(), W(), OZ(), UM(), M()],
                               [],
                               [EVAP_N(), EVAP_FPI(), EVAP_ROWS(), EVAP_FH(), EVAP_FL(), EVAP_CFM(), EVAP_CKT1(), EVAP_CKT2(), EVAP_NT1(), EVAP_NT2(), EVAP_FLO(), EVAP_FIN(), EVAP_MTL(), EVAP_TW(), EVAP_TT(), EVAP_HDR(), EVAP_CON(), EVAP_SPHT(), EVAP_CF(), EVAP_EFW(), EVAP_TAE(), EVAP_TWB()],
                               [COND_N(), COND_FPI(), COND_ROWS(), COND_FH(), COND_FL(), COND_CFM(), COND_CKT1(), COND_CKT2(), COND_NT1(), COND_NT2(), COND_FLO(), COND_FIN(), COND_MTL(), COND_TW(), COND_TT(), COND_HDR(), COND_CON(), COND_SPHT(), COND_CF()]]
@@ -33,7 +33,6 @@ class ASYS(Executable):
             "EPD": 60,
             "EHDR PD": 61,
             "EWG": 62,
-            ## FIXME missing many results!!!
             "UM": 140,
             "LBH20": 145,
         }
@@ -502,7 +501,7 @@ class SSV(InputRange):
         description += "or Aeroquip model size, i.e. 10, etc."
         super().__init__(
             code="SSV",
-            data_type=str,
+            data_type=int,
             description=description,
             min_value=0
             )
@@ -513,7 +512,7 @@ class LSV(InputRange):
         description += "or Aeroquip model size, i.e. 6, etc."
         super().__init__(
             code="LSV",
-            data_type=str,
+            data_type=int,
             description=description,
             min_value=0
         )
@@ -720,7 +719,7 @@ class EVAP_TW(InputRange):
             description="Tube Wall in mils, thus 16, etc."
         )
 
-class EVAP_TT(InputRange):
+class EVAP_TT(Input):
     def __init__(self):
         description = "Tube Treatment; enter Z for smooth; YB for Bosier City rifled; "
         description += "YH for Hitachi-HEX rifled; F for Fedders 5/16'' or 3/8'' OD "
@@ -734,7 +733,7 @@ class EVAP_TT(InputRange):
         description += "I for IGT 5mm rifled"
         super().__init__(
             code="TT",
-            data_type=int,
+            data_type=str,
             description=description
         )
 
@@ -833,7 +832,7 @@ class COND_FLO(InputClass):
             code = "FLO",
             data_type = str,
             description = description,
-            options = [-1, 0, 1, 2]
+            options = ["-1", "0", "1", "2"]
         )
 
 from src.models.acond import FIN as COND_FIN
