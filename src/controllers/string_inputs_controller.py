@@ -2,6 +2,7 @@ from src.models.string_input import StringInput as StringInput
 from src.views.string_input_view import Widget as StringInputView
 from src.controllers.controller import BaseController
 import tkinter as tk
+from tkinter import filedialog
 from pathlib import Path
 
 class StringInputsController(BaseController):
@@ -43,7 +44,7 @@ class StringInputsController(BaseController):
         self.view.text_area.text.tag_add("red", f"1.0 + {position-1} chars", tk.END)
         self.view.text_area.text.tag_configure("red", foreground="red")
         self.view.text_area.text.tag_configure("black", foreground="black")
-        self.view.text_area.text.mark_set("insert", f"1.0 + {position} chars")
+        #self.view.text_area.text.mark_set("insert", f"1.0 + {position} chars")
 
     def update_input_label(self):
         self.view.information.input = self.model.get_input()
@@ -126,16 +127,21 @@ class StringInputsController(BaseController):
             start, end = self.model.input.current()
             self.view.text_area.select(start, end)
 
-    def handle_write(self, event):
-        ...
+    def handle_write(self, event = None):
+        self.model._data.flush()
+        self.model._data.parent.write()
+        # if self.model._data.parent.write():
+        #     tk.messagebox.showinfo("Success", "Input file written successfully.")
+        # else:
+        #     tk.messagebox.showerror("Error", "Failed to write input file.")
 
     def handle_export(self, event):
         ...
     
     def handle_set_file_name(self):
         print("set file name")
-        current_name = self.input_data.input_file
-
+        current_name = self.model._executable.path / self.model._executable.input_file.name
+        print(f"Current input file name: {current_name}")
         new_name = tk.filedialog.asksaveasfilename(
             initialfile=Path(current_name).name if current_name else "",
             defaultextension=".dat",
@@ -146,7 +152,10 @@ class StringInputsController(BaseController):
         )
         try:
             if new_name:
-                self.input_data.set_input_file_name(Path(new_name).name)
+                self.model._executable.input_file.name = Path(new_name).name
+                self.model._executable.path = Path(new_name).parent
+                print(f"New input file name set to: {self.model._executable.input_file}")
+                print(f"New input file path set to: {self.model._executable.path}")
         except ValueError as e:
             tk.messagebox.showerror("Invalid Input File Name", str(e))
 
