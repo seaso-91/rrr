@@ -129,10 +129,11 @@ class StringInputsController(BaseController):
 
     def handle_write(self, event = None):
         self.model._data.flush()
-        if self.model._data.parent.write():
-            tk.messagebox.showinfo("Success", "Input file written successfully.")
-        else:
-            tk.messagebox.showerror("Error", "Failed to write input file.")
+        self.model._data.parent.write()
+        # if self.model._data.parent.write():
+        #     tk.messagebox.showinfo("Success", "Input file written successfully.")
+        # else:
+        #     tk.messagebox.showerror("Error", "Failed to write input file.")
 
     def handle_export(self, event):
         ...
