@@ -104,9 +104,14 @@ class StringInput():
             self._state.exit()
 
     def get_input(self):
-        if self._input_index < 0 or self._input_index >= len(self._input_list):
+        if self.cursor_position < 0 or self.cursor_position >= len(self.text):
             return None
-        return self._input_list[self.input.index][0]
+
+        self._enter_state(State.INITIALIZING)
+        while self._iter_position < self.cursor_position:
+            self._state.enter()
+            self._state.exit()
+        return self._input_list[self._input_index][0]
     
     def get_input_index(self, code: str) -> int:
         """
