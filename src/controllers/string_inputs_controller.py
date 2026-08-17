@@ -43,7 +43,7 @@ class StringInputsController(BaseController):
         self.view.text_area.text.tag_add("red", f"1.0 + {position-1} chars", tk.END)
         self.view.text_area.text.tag_configure("red", foreground="red")
         self.view.text_area.text.tag_configure("black", foreground="black")
-        self.view.text_area.text.mark_set("insert", f"1.0 + {position} chars")
+        #self.view.text_area.text.mark_set("insert", f"1.0 + {position} chars")
 
     def update_input_label(self):
         self.view.information.input = self.model.get_input()
