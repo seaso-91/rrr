@@ -257,20 +257,27 @@ class P(Input):
         if not super()._validate(value):
             return False
         if value[-2:] == "FT":
+            print(f"{value[-2:]} DOES equal FT")
             try:
                 altitude = float(value[:-2])
-                if altitude < 0:
+                if altitude >0:
+                    return True
+                else:
                     raise ValueError("Altitude cannot be negative")
             except ValueError:
                 raise ValueError("Invalid altitude value")
+        print(f"checking if {value[-1:]} == P")
         if value[-1:] == "P":
             try:
                 pressure = float(value[:-1])
-                if pressure < 0:
+                if pressure >= 0:
+                    return True
+                else:
                     raise ValueError("Pressure cannot be negative")
             except ValueError:
                 raise ValueError("Invalid pressure value")
-        raise ValueError("P must end with either 'FT' or 'P'")
+        return False
+        
 
 class N(InputRange):
     def __init__(self):
