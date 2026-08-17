@@ -249,32 +249,28 @@ class FCT(InputRange):
 class P(Input):
     def __init__(self):
         super().__init__(code="P",
-                         data_type=float,
+                         data_type=str,
                          description=" Altitude in Feet Above Sea Level, thus 5000FT, or Pressure in PSIG, thus 100P",
                          )
     
     def _validate(self, value):
         if not super()._validate(value):
             return False
-        if isinstance(value, str):
-            if value[-2:] == "FT":
-                try:
-                    altitude = float(value[:-2])
-                    if altitude < 0:
-                        raise ValueError("Altitude cannot be negative")
-                except ValueError:
-                    raise ValueError("Invalid altitude value")
-            elif value[-1:] == "P":
-                try:
-                    pressure = float(value[:-1])
-                    if pressure < 0:
-                        raise ValueError("Pressure cannot be negative")
-                    super().setValue(value)
-                except ValueError:
-                    raise ValueError("Invalid pressure value")
-            else:
-                raise ValueError("P must end with either 'FT' or 'P'")
-        return True
+        if value[-2:] == "FT":
+            try:
+                altitude = float(value[:-2])
+                if altitude < 0:
+                    raise ValueError("Altitude cannot be negative")
+            except ValueError:
+                raise ValueError("Invalid altitude value")
+        if value[-1:] == "P":
+            try:
+                pressure = float(value[:-1])
+                if pressure < 0:
+                    raise ValueError("Pressure cannot be negative")
+            except ValueError:
+                raise ValueError("Invalid pressure value")
+        raise ValueError("P must end with either 'FT' or 'P'")
 
 class N(InputRange):
     def __init__(self):
