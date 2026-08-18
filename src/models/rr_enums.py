@@ -1,11 +1,14 @@
 from enum import Enum
 import importlib
 
+
 class Program(Enum):
     ACOND = "ACOND"
     ACU = "ACU"
     AEVAP = "AEVAP"
     ASYS = "ASYS"
+    ASYS_DX = "ASYS_DX"
+    ASYS_HP = "ASYS_HP"
     AWCSYS = "AWCSYS"
     AWESYS = "AWESYS"
     COMP = "COMP"
