@@ -251,7 +251,7 @@ if __name__ == "__main__":
     asys_hp = ASYS_HP()
     asys_dx = ASYS_DX()
 
-    executable = acond
+    executable = aevap
 
     manager = ExeController(executable=executable)
 
@@ -259,7 +259,7 @@ if __name__ == "__main__":
 
 
     for max_workers in [8]:#8, 16, 32, 61]:
-        data_controller.import_dat(Path("C:\\Users\\jajones\\Desktop\\rrr\\KCC\\D1.DAT"))
+        data_controller.import_dat(Path("C:\\Users\\jajones\\Desktop\\rrr\\D1.DAT"))
 
         
         data_controller.set_values("TAE", list(map(str, (x for x in range(60, 91, 10)))), "2")
