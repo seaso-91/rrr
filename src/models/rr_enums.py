@@ -3,37 +3,37 @@ import importlib
 
 
 class Program(Enum):
-    ACOND = "ACOND"
-    ACU = "ACU"
-    AEVAP = "AEVAP"
-    ASYS = "ASYS"
-    ASYS_DX = "ASYS_DX"
-    ASYS_HP = "ASYS_HP"
-    AWCSYS = "AWCSYS"
-    AWESYS = "AWESYS"
-    COMP = "COMP"
-    FAD = "FAD"
-    STA = "STA"
-    WCL = "WCL"
-    WCSYS = "WCSYS"
-    WCU = "WCU"
-    WEL = "WEL"
-    WESYS = "WESYS"
-    WLHPA = "WLHPA"
-    WWSYS = "WWSYS"
+    ACOND = "acond.acond"
+    ACU = "acu.acu"
+    AEVAP = "aevap.aevap"
+    ASYS = "asys.asys"
+    ASYS_DX = "asys.asys_dx"
+    ASYS_HP = "asys.asys_hp"
+    AWCSYS = "awcsys.awcsys"
+    AWESYS = "awesys.awesys"
+    COMP = "comp.comp"
+    FAD = "fad.fad"
+    STA = "sta.sta"
+    WCL = "wcl.wcl"
+    WCSYS = "wcsys.wcsys"
+    WCU = "wcu.wcu"
+    WEL = "wel.wel"
+    WESYS = "wesys.wesys"
+    WLHPA = "wlhpa.wlhpa"
+    WWSYS = "wwsys.wwsys"
 
 @property
 def loaded_class(self):
-    module = importlib.import_module(f"src.models.{self.value.lower()}")
-    return getattr(module, self.value.upper())
+    module = importlib.import_module(f"src.models.{self.value.split('.')[0]}")
+    return getattr(module, self.value.split('.')[0].upper())
 
 @property
 def name(self):
-    return self.value
+    return self.value.split('.')[0].upper()
 
 @property
 def exe(self):
-    return f"{self.value}.exe"
+    return f"{self.name}.exe"
 
 Program.cls = loaded_class
 Program.exe = exe
