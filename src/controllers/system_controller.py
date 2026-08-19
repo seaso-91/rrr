@@ -27,7 +27,7 @@ class SimulationController:
         
         self.simulation_view = SimulationView(self.root)
         self.simulation_view.pack(side="top", fill="both", expand=True)
-        self.simulation_view.options = [program.value for program in Program]
+        self.simulation_view.options = [program.name for program in Program]
         self.selected_executable: Program | None = None
         self.simulation_view.bind_select_exe(self.handle_select_exe)
         self.input_view: InputView | None = None
@@ -40,7 +40,7 @@ class SimulationController:
 
     def handle_select_exe(self, event):
         executable_name = self.simulation_view.selected_exe.get()
-        self.selected_executable = Program(executable_name).cls()
+        self.selected_executable = Program[executable_name].cls()
 
         if self.input_view:
             self.input_view.pack_forget()
