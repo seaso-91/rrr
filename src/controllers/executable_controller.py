@@ -209,9 +209,10 @@ class ExecutableList():
             if path.is_dir() and path.name.isdigit() and len(path.name) == 5:
                 exe_files = list(path.glob("*.exe"))
                 if len(exe_files) == 1:
-                    executable = self._new_executable()
-                    executable.path = path
-                    self.add(executable)
+                    if exe_files[0].name == self.program.exe:
+                        executable = self._new_executable()
+                        executable.path = path
+                        self.add(executable)
                     
     def _new_executable(self) -> Executable:
         try:
