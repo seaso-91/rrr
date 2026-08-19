@@ -1,18 +1,11 @@
-from ast import In
-from re import S
 
 from tkinterdnd2 import TkinterDnD
-import tkinter as tk
 
 from src.controllers.string_inputs_controller import StringInputsController
 from src.controllers.data_controller import DataController
 from src.controllers.executable_controller import ExeController
 from src.controllers.inputs_controller import InputsController
 
-from src.models.aevap import AEVAP
-from src.models.acond import ACOND
-from src.models.asys import ASYS_DX, ASYS_HP
-from src.models.data import Data
 from src.models.string_input import StringInput
 
 from src.views.simulation_view import SimulationView
