@@ -175,6 +175,8 @@ class StringInputsController(BaseController):
     
 if __name__ == "__main__":
     from src.models.aevap import AEVAP
+    from src.models.acond import ACOND
+    from src.models.asys import ASYS_DX, ASYS_HP
     from src.views.string_input_view import Widget as StringInputView
     from src.controllers.data_controller import DataController
 
@@ -182,8 +184,11 @@ if __name__ == "__main__":
     root = TkinterDnD.Tk()
 
     aevap = AEVAP()
+    acond = ACOND()
+    asys_dx = ASYS_DX()
+    asys_hp = ASYS_HP()
 
-    data_controller = DataController(aevap)
+    data_controller = DataController(asys_dx)
 
     from src.models.string_input import StringInput
     model = StringInput(data_controller)
